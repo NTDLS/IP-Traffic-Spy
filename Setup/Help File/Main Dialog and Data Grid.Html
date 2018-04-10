@@ -1,0 +1,41 @@
+<HTML>
+    <HEAD>
+       <TITLE>Main Dialog & Data Grid</TITLE>
+    </HEAD>
+    <BODY LINK="#0000FF" VLINK="#800080">
+        <Table Border="0" Width="570" CellPadding="0" CellSpacing="0"><TR><TD>
+
+            <CENTER><P><IMG SRC="AppLogo.gif"></P></CENTER>
+    
+            <H2 ALIGN=CENTER><FONT COLOR="#0000FF">Main Dialog & Data Grid</FONT></H2>
+            <P><HR WIDTH="100%"></P>
+
+            &nbsp;&nbsp;&nbsp;&nbsp;The "Main Dialog" or "Data Grid Dialog" is where TCP/IP packets will be displayed that were
+            encountered but not filtered out by one or more of your <a href="Include Dialog.Html">Inclusion</a> or
+            <a href="Exclude Dialog.Html">Exclusion</A> filters.
+            <BR><BR>
+            <Img Src="Main Dialog.png">
+
+            <BR><BR><B>The data grid displays various columns:</B>
+            <BR>&nbsp;&nbsp;&nbsp;&nbsp;<B>Date</B> is the date that the packet was encountered.
+            <BR>&nbsp;&nbsp;&nbsp;&nbsp;<B>Time</B> is the time that the packet was encountered.
+            <BR>&nbsp;&nbsp;&nbsp;&nbsp;<B>S-IP</B> is the originating IP of the TCP/IP packet.
+            <BR>&nbsp;&nbsp;&nbsp;&nbsp;<B>D-IP</B> is the intended destination IP of the TCP/IP packet.
+            <BR>&nbsp;&nbsp;&nbsp;&nbsp;<B>S-Port</B> is the port that the TCP/IP packed originated from.
+            <BR>&nbsp;&nbsp;&nbsp;&nbsp;<B>D-Port</B> is the intended destination port.
+            <BR>&nbsp;&nbsp;&nbsp;&nbsp;<B>Text</B> This is the actual text data that was appended to the TCP/IP packet.
+            <BR>&nbsp;&nbsp;&nbsp;&nbsp;<B>Size</B> This is the overall size of the TCP/IP packet.
+
+            <BR><BR><B>The data grid also displays various icons for each specific data direction:</B>
+            <BR>&nbsp;&nbsp;&nbsp;&nbsp;<Img Src="Sent Packet.GIF"> <B>Sent Packets</B> are packets that were sent from your computer.
+            <BR>&nbsp;&nbsp;&nbsp;&nbsp;<Img Src="Received Packet.GIF"> <B>Received Packets</B> are packets that were received by your computer.
+            <BR>&nbsp;&nbsp;&nbsp;&nbsp;<Img Src="Foreign Packet.GIF"> <B>Foreign Packets</B> are packets that were encountered by your network
+                    interface that are not destined for your computer. These are usually packets that are broadcast from various
+                    broadcast protocols and data transmitted by older hubs (as opposed to switches).
+
+            <BR><BR><B>Notes:</B>
+            <BR>&nbsp;&nbsp;&nbsp;&nbsp;The grid will only hold 100,000 lines of packet information. The oldest packets
+            will be truncated from the grid as packets are received that overflows this limit.
+        </TD></TR></Table>
+    </BODY>
+</HTML>
