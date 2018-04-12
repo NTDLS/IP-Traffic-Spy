@@ -2,10 +2,12 @@
 #define _ROUTINES_H
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include "../../@Libraries/CStringBuilder/CStringBuilderArray.H"
-#include "../../@Libraries/CVectors/CVector.H"
+#include "../../NSWFL/NSWFL.H"
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+using namespace NSWFL::String;
+using namespace NSWFL::Collections;
 
 #define INITEDITPROC (WM_USER + 1000)
 
@@ -66,15 +68,15 @@ typedef struct _TAG_BINARY_DATA {
 
 extern HANDLE hListenThread;
 
-extern CStringBuilderArray gIncludeSourceIPFilter;
-extern CStringBuilderArray gIncludeTargetIPFilter;
-extern CVector<int> gIncludeSourcePortFilter;
-extern CVector<int> gIncludeTargetPortFilter;
+extern StringBuilderArray gIncludeSourceIPFilter;
+extern StringBuilderArray gIncludeTargetIPFilter;
+extern VectorT<int> gIncludeSourcePortFilter;
+extern VectorT<int> gIncludeTargetPortFilter;
 
-extern CStringBuilderArray gExcludeSourceIPFilter;
-extern CStringBuilderArray gExcludeTargetIPFilter;
-extern CVector<int> gExcludeSourcePortFilter;
-extern CVector<int> gExcludeTargetPortFilter;
+extern StringBuilderArray gExcludeSourceIPFilter;
+extern StringBuilderArray gExcludeTargetIPFilter;
+extern VectorT<int> gExcludeSourcePortFilter;
+extern VectorT<int> gExcludeTargetPortFilter;
 
 volatile extern bool gbShutDownThread;
 volatile extern bool gbSuspendThread;
@@ -92,10 +94,10 @@ extern CRITICAL_SECTION gCS;
 DWORD WINAPI ListenThread(LPVOID lpVoid);
 //void FreeExcludeFilters(void);
 //void FreeIncludeFilters(void);
-void PopListBoxFromArray(HWND hWnd, CStringBuilderArray *arr);
-void PopListBoxFromArray(HWND hWnd, CVector<int> *arr);
-void PopArrayFromListBox(HWND hWnd, CStringBuilderArray *arr);
-void PopArrayFromListBox(HWND hWnd, CVector<int> *arr);
+void PopListBoxFromArray(HWND hWnd, StringBuilderArray *arr);
+void PopListBoxFromArray(HWND hWnd, VectorT<int> *arr);
+void PopArrayFromListBox(HWND hWnd, StringBuilderArray *arr);
+void PopArrayFromListBox(HWND hWnd, VectorT<int> *arr);
 char *MakeIPMask(const char *sInIP, char *sOutIP, int iMaxSz);
 bool IsValidIPAddress(const char *sIP);
 void ClearGrid(HWND hGrid);
@@ -106,7 +108,6 @@ void CleanHex(const char *sBuf, const int iBufSz, char *sOutBuf, int iOutBufSz);
 void AddEditHandler(HWND hOwner, HWND hWnd);
 void AddListHandler(HWND hOwner, HWND hWnd);
 void AddListViewHandler(HWND hOwner, HWND hWnd);
-LRESULT CALLBACK ListControlViewProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK ListControlProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK EditControlProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 

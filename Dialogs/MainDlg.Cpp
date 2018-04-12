@@ -8,8 +8,6 @@
 #include <CommCtrl.h>
 
 #include "../Source/Entry.H"
-#include "../../@Libraries/CStringBuilder/CStringBuilderArray.H"
-#include "../../@Libraries/CVectors/CStringVector.H"
 
 #include "../Dialogs/MainDlg.H"
 #include "../Dialogs/NetLogoDlg.H"
@@ -27,6 +25,7 @@ using namespace NSWFL::DateTime;
 using namespace NSWFL::Registry;
 using namespace NSWFL::ListView;
 using namespace NSWFL::Menu;
+using namespace NSWFL::Collections;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -266,7 +265,7 @@ LRESULT CALLBACK ItemListProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 			int iItemPos = 0;
 			char sText[65535];
 
-			CStringBuilderArray list;
+			StringBuilderArray list;
 
 			while ((iItemPos = ListView_GetNextItem(hItemList, iItemPos, LVNI_SELECTED)) != -1)
 			{
@@ -274,7 +273,7 @@ LRESULT CALLBACK ItemListProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 				list.Add(sText);
 			}
 
-			CStringBuilder stringBuf;
+			StringBuilder stringBuf;
 			for (int i = 0; i < list.Count(); i++)
 			{
 				stringBuf.AppendF("%s\r\n", list.at(i)->Buffer);
@@ -299,7 +298,7 @@ LRESULT CALLBACK ItemListProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 			int iItemPos = 0;
 			char sText[1024];
 
-			CStringBuilderArray list;
+			StringBuilderArray list;
 
 			while ((iItemPos = ListView_GetNextItem(hItemList, iItemPos, LVNI_SELECTED)) != -1)
 			{
@@ -312,7 +311,7 @@ LRESULT CALLBACK ItemListProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 
 			list.SortAscending();
 
-			CStringBuilder stringBuf;
+			StringBuilder stringBuf;
 			for (int i = 0; i < list.Count(); i++)
 			{
 				stringBuf.AppendF("%s\r\n", list.at(i)->Buffer);
@@ -337,7 +336,7 @@ LRESULT CALLBACK ItemListProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 			int iItemPos = 0;
 			char sText[1024];
 
-			CStringBuilderArray list;
+			StringBuilderArray list;
 
 			while ((iItemPos = ListView_GetNextItem(hItemList, iItemPos, LVNI_SELECTED)) != -1)
 			{
@@ -350,7 +349,7 @@ LRESULT CALLBACK ItemListProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 
 			list.SortAscending();
 
-			CStringBuilder stringBuf;
+			StringBuilder stringBuf;
 			for (int i = 0; i < list.Count(); i++)
 			{
 				stringBuf.AppendF("%s\r\n", list.at(i)->Buffer);
@@ -375,7 +374,7 @@ LRESULT CALLBACK ItemListProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 			int iItemPos = 0;
 			char sText[1024];
 
-			CStringBuilderArray list;
+			StringBuilderArray list;
 
 			while ((iItemPos = ListView_GetNextItem(hItemList, iItemPos, LVNI_SELECTED)) != -1)
 			{
@@ -388,7 +387,7 @@ LRESULT CALLBACK ItemListProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 
 			list.SortAscending();
 
-			CStringBuilder stringBuf;
+			StringBuilder stringBuf;
 			for (int i = 0; i < list.Count(); i++)
 			{
 				stringBuf.AppendF("%s\r\n", list.at(i)->Buffer);
@@ -413,7 +412,7 @@ LRESULT CALLBACK ItemListProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 			int iItemPos = 0;
 			char sText[1024];
 
-			CStringBuilderArray list;
+			StringBuilderArray list;
 
 			while ((iItemPos = ListView_GetNextItem(hItemList, iItemPos, LVNI_SELECTED)) != -1)
 			{
@@ -426,7 +425,7 @@ LRESULT CALLBACK ItemListProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 
 			list.SortAscending();
 
-			CStringBuilder stringBuf;
+			StringBuilder stringBuf;
 			for (int i = 0; i < list.Count(); i++)
 			{
 				stringBuf.AppendF("%s\r\n", list.at(i)->Buffer);

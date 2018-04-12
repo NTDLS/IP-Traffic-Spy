@@ -13,8 +13,6 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "Entry.H"
-#include "../../@Libraries/CStringBuilder/CStringBuilderArray.H"
-#include "../../@Libraries/CVectors/CVector.H"
 
 #include "../Dialogs/MainDlg.H"
 
@@ -27,6 +25,7 @@ using namespace NSWFL::Windows;
 using namespace NSWFL::File;
 using namespace NSWFL::ListBox;
 using namespace NSWFL::Memory;
+using namespace NSWFL::Collections;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -35,17 +34,20 @@ using namespace NSWFL::Memory;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-CStringBuilderArray gIncludeSourceIPFilter;
-CStringBuilderArray gIncludeTargetIPFilter;
-CVector<int> gIncludeSourcePortFilter;
-CVector<int> gIncludeTargetPortFilter;
+StringBuilderArray gIncludeSourceIPFilter;
+StringBuilderArray gIncludeTargetIPFilter;
+VectorT<int> gIncludeSourcePortFilter;
+VectorT<int> gIncludeTargetPortFilter;
 
-CStringBuilderArray gExcludeSourceIPFilter;
-CStringBuilderArray gExcludeTargetIPFilter;
-CVector<int> gExcludeSourcePortFilter;
-CVector<int> gExcludeTargetPortFilter;
+StringBuilderArray gExcludeSourceIPFilter;
+StringBuilderArray gExcludeTargetIPFilter;
+VectorT<int> gExcludeSourcePortFilter;
+VectorT<int> gExcludeTargetPortFilter;
 
 HANDLE hListenThread = NULL;
+
+__int64 i64MatchPackets = 0;
+__int64 i64MatchPakSize = 0;
 
 volatile bool gbShutDownThread = false;
 volatile bool gbSuspendThread = false;
@@ -60,7 +62,7 @@ CRITICAL_SECTION gCS;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void PopListBoxFromArray(HWND hWnd, CVector<int> *arr)
+void PopListBoxFromArray(HWND hWnd, VectorT<int> *arr)
 {
 	arr->SortAscending();
 
@@ -74,7 +76,7 @@ void PopListBoxFromArray(HWND hWnd, CVector<int> *arr)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void PopListBoxFromArray(HWND hWnd, CStringBuilderArray *arr)
+void PopListBoxFromArray(HWND hWnd, StringBuilderArray *arr)
 {
 	arr->SortAscending();
 
@@ -86,7 +88,7 @@ void PopListBoxFromArray(HWND hWnd, CStringBuilderArray *arr)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void PopArrayFromListBox(HWND hWnd, CVector<int> *arr)
+void PopArrayFromListBox(HWND hWnd, VectorT<int> *arr)
 {
 	int iItemCount = CountListBoxItems(hWnd);
 	int iLength = 0;
@@ -111,7 +113,7 @@ void PopArrayFromListBox(HWND hWnd, CVector<int> *arr)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void PopArrayFromListBox(HWND hWnd, CStringBuilderArray *arr)
+void PopArrayFromListBox(HWND hWnd, StringBuilderArray *arr)
 {
 	int iItemCount = CountListBoxItems(hWnd);
 	int iLength = 0;
@@ -430,6 +432,9 @@ void ClearGrid(HWND hGrid)
 	}
 
 	ListView_DeleteAllItems(hGrid);
+
+	i64MatchPackets = 0;
+	i64MatchPakSize = 0;
 
 	ResumeThread(hListenThread);
 }
@@ -762,8 +767,6 @@ DWORD WINAPI ListenThread(LPVOID lpVoid)
 	int iReceiveSize = 0;
 	__int64 i64Packets = 0;
 	__int64 i64PakSize = 0;
-	__int64 i64MatchPackets = 0;
-	__int64 i64MatchPakSize = 0;
 	char sPackets[128];
 	char sPakSize[128];
 
@@ -1030,46 +1033,43 @@ DWORD WINAPI ListenThread(LPVOID lpVoid)
 					}
 				}
 
+				bool itemAdded = false;
+
 				if (bShowItem)
 				{
 					if (pIPHeader->proto == IPPROTO_TCP)
 					{
 						if (bFilterIncludeTPC)
 						{
-							if (AddListBoxItem(sSourceIP, sDestIP, ntohs(pTCPHeader->sport),
-								ntohs(pTCPHeader->dport), sPackBuff, iReceiveSize, pIPHeader->proto, iImage))
-							{
-								i64MatchPackets = 0;
-								i64MatchPakSize = 0;
-							}
+							AddListBoxItem(sSourceIP, sDestIP, ntohs(pTCPHeader->sport),
+								ntohs(pTCPHeader->dport), sPackBuff, iReceiveSize, pIPHeader->proto, iImage);
+							itemAdded = true;
 						}
 					}
 					else if (pIPHeader->proto == IPPROTO_UDP)
 					{
 						if (bFilterIncludeUDP)
 						{
-							if (AddListBoxItem(sSourceIP, sDestIP, ntohs(pUDPHeader->sport),
-								ntohs(pUDPHeader->dport), sPackBuff, iReceiveSize, pIPHeader->proto, iImage))
-							{
-								i64MatchPackets = 0;
-								i64MatchPakSize = 0;
-							}
+							AddListBoxItem(sSourceIP, sDestIP, ntohs(pUDPHeader->sport),
+								ntohs(pUDPHeader->dport), sPackBuff, iReceiveSize, pIPHeader->proto, iImage);
+							itemAdded = true;
+
 						}
 					}
 					else
 					{
 						if (bFilterIncludeOtherProtocols)
 						{
-							if (AddListBoxItem(sSourceIP, sDestIP, 0, 0, sPackBuff, iReceiveSize, pIPHeader->proto, iImage))
-							{
-								i64MatchPackets = 0;
-								i64MatchPakSize = 0;
-							}
+							AddListBoxItem(sSourceIP, sDestIP, 0, 0, sPackBuff, iReceiveSize, pIPHeader->proto, iImage);
+							itemAdded = true;
 						}
 					}
 
-					i64MatchPackets++;
-					i64MatchPakSize += iReceiveSize;
+					if (itemAdded)
+					{
+						i64MatchPackets++;
+						i64MatchPakSize += iReceiveSize;
+					}
 				}
 
 				i64Packets++;

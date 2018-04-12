@@ -2,8 +2,7 @@
 #define _ENTRY_H
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include "../../@Libraries/Debug/Debug.H"
-#include "../../@Libraries/NSWFL/NSWFL.H"
+#include "../../NSWFL/NSWFL.H"
 
 #include "../Resources/Resource.H"
 
