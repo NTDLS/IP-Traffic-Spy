@@ -114,6 +114,25 @@ void Stop(void)
 	}
 	hListenThread = NULL;
 
+	/*
+	if (hResolverThread)
+	{
+		gbShutDownThread = true;
+		ResumeThread(hResolverThread);
+
+		DWORD dwExitCode = 0;
+		while (GetExitCodeThread(hResolverThread, &dwExitCode) != 0)
+		{
+			if (dwExitCode != STILL_ACTIVE)
+			{
+				break;
+			}
+			DoEvents();
+		}
+	}
+	hResolverThread = NULL;
+	*/
+
 	LeaveCriticalSection(&gCS);
 }
 
@@ -151,6 +170,8 @@ void Start(void)
 #define MENU_COPY_TARGET_IP		 WM_USER + 113
 #define MENU_COPY_TARGET_PORT	 WM_USER + 114
 #define MENU_COPY_TEXT			 WM_USER + 115
+#define MENU_COPY_SOURCE_HOST	 WM_USER + 116
+#define MENU_COPY_TARGET_HOST	 WM_USER + 117
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -183,8 +204,10 @@ LRESULT CALLBACK ItemListProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 			AppendMenu(hClipboardMenu, MF_STRING, MENU_COPY_TEXT, "Copy Text");
 			AppendMenu(hClipboardMenu, MF_SEPARATOR, MENU_SEPERATOR, "");
 			AppendMenu(hClipboardMenu, MF_STRING, MENU_COPY_SOURCE_IP, "Copy Source IP");
+			AppendMenu(hClipboardMenu, MF_STRING, MENU_COPY_SOURCE_HOST, "Copy Source Host");
 			AppendMenu(hClipboardMenu, MF_STRING, MENU_COPY_SOURCE_PORT, "Copy Source Port");
 			AppendMenu(hClipboardMenu, MF_STRING, MENU_COPY_TARGET_IP, "Copy Destination IP");
+			AppendMenu(hClipboardMenu, MF_STRING, MENU_COPY_TARGET_HOST, "Copy Destination Host");
 			AppendMenu(hClipboardMenu, MF_STRING, MENU_COPY_TARGET_PORT, "Copy Destination Port");
 			InsertMenu(hChild, 0, MF_POPUP | MF_BYPOSITION, (UINT_PTR)hClipboardMenu, "Clipboard");
 			
@@ -272,6 +295,82 @@ LRESULT CALLBACK ItemListProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 				ListView_GetItemText(hItemList, iItemPos, COL_TEXT_POS, sText, sizeof(sText));
 				list.Add(sText);
 			}
+
+			StringBuilder stringBuf;
+			for (int i = 0; i < list.Count(); i++)
+			{
+				stringBuf.AppendF("%s\r\n", list.at(i)->Buffer);
+			}
+
+			CopyToClipboard(stringBuf.Buffer);
+
+			if (isPaused == false)
+			{
+				Resume();
+			}
+		}
+		else if (wParam == MENU_COPY_TARGET_HOST)
+		{
+			bool isPaused = IsPaused();
+
+			if (isPaused == false)
+			{
+				Pause();
+			}
+
+			int iItemPos = 0;
+			char sText[1024];
+
+			StringBuilderArray list;
+
+			while ((iItemPos = ListView_GetNextItem(hItemList, iItemPos, LVNI_SELECTED)) != -1)
+			{
+				ListView_GetItemText(hItemList, iItemPos, COL_D_HOST_POS, sText, sizeof(sText));
+				if (list.Contiains(sText) == false)
+				{
+					list.Add(sText);
+				}
+			}
+
+			list.SortAscending();
+
+			StringBuilder stringBuf;
+			for (int i = 0; i < list.Count(); i++)
+			{
+				stringBuf.AppendF("%s\r\n", list.at(i)->Buffer);
+			}
+
+			CopyToClipboard(stringBuf.Buffer);
+
+			if (isPaused == false)
+			{
+				Resume();
+			}
+		}
+		else if (wParam == MENU_COPY_SOURCE_HOST)
+		{
+			bool isPaused = IsPaused();
+
+			if (isPaused == false)
+			{
+				Pause();
+			}
+
+			int iItemPos = 0;
+			char sText[1024];
+
+			StringBuilderArray list;
+
+			while ((iItemPos = ListView_GetNextItem(hItemList, iItemPos, LVNI_SELECTED)) != -1)
+			{
+				ListView_GetItemText(hItemList, iItemPos, COL_S_HOST_POS, sText, sizeof(sText));
+				if (list.Contiains(sText) == false)
+				{
+					list.Add(sText);
+				}
+			}
+
+			list.SortAscending();
 
 			StringBuilder stringBuf;
 			for (int i = 0; i < list.Count(); i++)
@@ -518,7 +617,7 @@ LRESULT CALLBACK ItemListProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 
 				int iPort = atoi(sText);
 
-				if (gExcludeSourcePortFilter.Contiains(iPort) == false)
+				if (gExcludeSourcePortFilter.ContiainsValue(iPort) == false)
 				{
 					gExcludeSourcePortFilter.Add(iPort);
 				}
@@ -547,7 +646,7 @@ LRESULT CALLBACK ItemListProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 
 				int iPort = atoi(sText);
 
-				if (gExcludeTargetPortFilter.Contiains(iPort) == false)
+				if (gExcludeTargetPortFilter.ContiainsValue(iPort) == false)
 				{
 					gExcludeTargetPortFilter.Add(iPort);
 				}
@@ -638,7 +737,7 @@ LRESULT CALLBACK ItemListProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 
 				int iPort = atoi(sText);
 
-				if (gIncludeSourcePortFilter.Contiains(iPort) == false)
+				if (gIncludeSourcePortFilter.ContiainsValue(iPort) == false)
 				{
 					gIncludeSourcePortFilter.Add(iPort);
 				}
@@ -667,7 +766,7 @@ LRESULT CALLBACK ItemListProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 
 				int iPort = atoi(sText);
 
-				if (gIncludeTargetPortFilter.Contiains(iPort) == false)
+				if (gIncludeTargetPortFilter.ContiainsValue(iPort) == false)
 				{
 					gIncludeTargetPortFilter.Add(iPort);
 				}
@@ -705,8 +804,8 @@ INT_PTR CALLBACK MainDialog(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		SendMessage(hWnd, (UINT)WM_SETTEXT, (WPARAM)0, (LPARAM)gsTitleCaption);
 		SendMessage(hWnd, WM_SETICON, TRUE, (LPARAM) LoadIcon(ghAppInstance, MAKEINTRESOURCE(IDI_MAIN)));
 
-		LV_COLUMN MyLVColumb;
-		memset(&MyLVColumb, 0, sizeof(MyLVColumb));
+		LV_COLUMN lvColumn;
+		memset(&lvColumn, 0, sizeof(lvColumn));
 
 		hItemList = GetDlgItem(hWnd, IDC_ITEMS);
 
@@ -740,68 +839,89 @@ INT_PTR CALLBACK MainDialog(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		SendMessage(hItemList, (UINT)LVM_SETEXTENDEDLISTVIEWSTYLE, (WPARAM)0, (LPARAM)iLVStyle);
 
 		// Create Listview columns
-		MyLVColumb.cx        = 91;
-		MyLVColumb.pszText   = "Date";
-		MyLVColumb.iSubItem  = COL_DATE_POS;
-		MyLVColumb.mask      = LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
-		MyLVColumb.fmt       = LVCFMT_LEFT;
-		ListView_InsertColumn(hItemList, MyLVColumb.iSubItem, &MyLVColumb);
+		lvColumn.cx        = 91;
+		lvColumn.pszText   = "Date";
+		lvColumn.iSubItem  = COL_DATE_POS;
+		lvColumn.mask      = LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
+		lvColumn.fmt       = LVCFMT_LEFT;
+		ListView_InsertColumn(hItemList, lvColumn.iSubItem, &lvColumn);
 
-		MyLVColumb.cx        = 75;
-		MyLVColumb.pszText   = "Time";
-		MyLVColumb.iSubItem  = COL_TIME_POS;
-		MyLVColumb.mask      = LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
-		MyLVColumb.fmt       = LVCFMT_LEFT;
-		ListView_InsertColumn(hItemList, MyLVColumb.iSubItem, &MyLVColumb);
+		lvColumn.cx        = 75;
+		lvColumn.pszText   = "Time";
+		lvColumn.iSubItem  = COL_TIME_POS;
+		lvColumn.mask      = LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
+		lvColumn.fmt       = LVCFMT_LEFT;
+		ListView_InsertColumn(hItemList, lvColumn.iSubItem, &lvColumn);
 
-		MyLVColumb.cx        = 60;
-		MyLVColumb.pszText   = "Protocol";
-		MyLVColumb.iSubItem  = COL_PROTO;
-		MyLVColumb.mask      = LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
-		MyLVColumb.fmt       = LVCFMT_LEFT;
-		ListView_InsertColumn(hItemList, MyLVColumb.iSubItem, &MyLVColumb);
+		lvColumn.cx        = 60;
+		lvColumn.pszText   = "Protocol";
+		lvColumn.iSubItem  = COL_PROTO;
+		lvColumn.mask      = LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
+		lvColumn.fmt       = LVCFMT_LEFT;
+		ListView_InsertColumn(hItemList, lvColumn.iSubItem, &lvColumn);
 
-		MyLVColumb.cx        = 100;
-		MyLVColumb.pszText   = "S-IP";
-		MyLVColumb.iSubItem  = COL_S_IP_POS;
-		MyLVColumb.mask      = LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
-		MyLVColumb.fmt       = LVCFMT_LEFT;
-		ListView_InsertColumn(hItemList, MyLVColumb.iSubItem, &MyLVColumb);
+		lvColumn.cx        = 100;
+		lvColumn.pszText   = "S-IP";
+		lvColumn.iSubItem  = COL_S_IP_POS;
+		lvColumn.mask      = LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
+		lvColumn.fmt       = LVCFMT_LEFT;
+		ListView_InsertColumn(hItemList, lvColumn.iSubItem, &lvColumn);
 
-		MyLVColumb.cx        = 100;
-		MyLVColumb.pszText   = "D-IP";
-		MyLVColumb.iSubItem  = COL_D_IP_POS;
-		MyLVColumb.mask      = LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
-		MyLVColumb.fmt       = LVCFMT_LEFT;
-		ListView_InsertColumn(hItemList, MyLVColumb.iSubItem, &MyLVColumb);
+		lvColumn.cx = 100;
+		lvColumn.pszText = "S-Host";
+		lvColumn.iSubItem = COL_S_HOST_POS;
+		lvColumn.mask = LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
+		lvColumn.fmt = LVCFMT_LEFT;
+		ListView_InsertColumn(hItemList, lvColumn.iSubItem, &lvColumn);
 
-		MyLVColumb.cx        = 50;
-		MyLVColumb.pszText   = "S-Port";
-		MyLVColumb.iSubItem  = COL_SPORT_POS;
-		MyLVColumb.mask      = LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
-		MyLVColumb.fmt       = LVCFMT_LEFT;
-		ListView_InsertColumn(hItemList, MyLVColumb.iSubItem, &MyLVColumb);
+		lvColumn.cx        = 100;
+		lvColumn.pszText   = "D-IP";
+		lvColumn.iSubItem  = COL_D_IP_POS;
+		lvColumn.mask      = LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
+		lvColumn.fmt       = LVCFMT_LEFT;
+		ListView_InsertColumn(hItemList, lvColumn.iSubItem, &lvColumn);
 
-		MyLVColumb.cx        = 50;
-		MyLVColumb.pszText   = "D-Port";
-		MyLVColumb.iSubItem  = COL_DPORT_POS;
-		MyLVColumb.mask      = LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
-		MyLVColumb.fmt       = LVCFMT_LEFT;
-		ListView_InsertColumn(hItemList, MyLVColumb.iSubItem, &MyLVColumb);
+		lvColumn.cx = 100;
+		lvColumn.pszText = "D-Host";
+		lvColumn.iSubItem = COL_D_HOST_POS;
+		lvColumn.mask = LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
+		lvColumn.fmt = LVCFMT_LEFT;
+		ListView_InsertColumn(hItemList, lvColumn.iSubItem, &lvColumn);
 
-		MyLVColumb.cx        = 400;
-		MyLVColumb.pszText   = "Text";
-		MyLVColumb.iSubItem  = COL_TEXT_POS;
-		MyLVColumb.mask      = LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
-		MyLVColumb.fmt       = LVCFMT_LEFT;
-		ListView_InsertColumn(hItemList, MyLVColumb.iSubItem, &MyLVColumb);
+		lvColumn.cx        = 50;
+		lvColumn.pszText   = "S-Port";
+		lvColumn.iSubItem  = COL_SPORT_POS;
+		lvColumn.mask      = LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
+		lvColumn.fmt       = LVCFMT_LEFT;
+		ListView_InsertColumn(hItemList, lvColumn.iSubItem, &lvColumn);
 
-		MyLVColumb.cx        = 50;
-		MyLVColumb.pszText   = "Size";
-		MyLVColumb.iSubItem  = COL_SIZE_POS;
-		MyLVColumb.mask      = LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
-		MyLVColumb.fmt       = LVCFMT_LEFT;
-		ListView_InsertColumn(hItemList, MyLVColumb.iSubItem, &MyLVColumb);
+		lvColumn.cx        = 50;
+		lvColumn.pszText   = "D-Port";
+		lvColumn.iSubItem  = COL_DPORT_POS;
+		lvColumn.mask      = LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
+		lvColumn.fmt       = LVCFMT_LEFT;
+		ListView_InsertColumn(hItemList, lvColumn.iSubItem, &lvColumn);
+
+		lvColumn.cx        = 400;
+		lvColumn.pszText   = "Text";
+		lvColumn.iSubItem  = COL_TEXT_POS;
+		lvColumn.mask      = LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
+		lvColumn.fmt       = LVCFMT_LEFT;
+		ListView_InsertColumn(hItemList, lvColumn.iSubItem, &lvColumn);
+
+		lvColumn.cx        = 50;
+		lvColumn.pszText   = "Size";
+		lvColumn.iSubItem  = COL_SIZE_POS;
+		lvColumn.mask      = LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
+		lvColumn.fmt       = LVCFMT_LEFT;
+		ListView_InsertColumn(hItemList, lvColumn.iSubItem, &lvColumn);
+
+		lvColumn.cx = 0;
+		lvColumn.pszText = "Resolver Context";
+		lvColumn.iSubItem = COL_RESOLVER_SEQ_POS;
+		lvColumn.mask = LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
+		lvColumn.fmt = LVCFMT_LEFT;
+		ListView_InsertColumn(hItemList, lvColumn.iSubItem, &lvColumn);
 
 		CenterWindow(hWnd);
 
@@ -909,7 +1029,7 @@ INT_PTR CALLBACK MainDialog(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			CheckMenuItem(hMainMenu, ID_FILTERS_UPD, bFilterIncludeUDP ? MF_UNCHECKED : MF_CHECKED);
 			bFilterIncludeUDP = IsMenuItemChecked(hMainMenu, ID_FILTERS_UPD) != 0;
 		}
-		else if (wParam == ID_FILTERS_UPD)
+		else if (wParam == ID_FILTERS_OTHERPROTOCOLS)
 		{
 			CheckMenuItem(hMainMenu, ID_FILTERS_OTHERPROTOCOLS, bFilterIncludeOtherProtocols ? MF_UNCHECKED : MF_CHECKED);
 			bFilterIncludeOtherProtocols = IsMenuItemChecked(hMainMenu, ID_FILTERS_OTHERPROTOCOLS) != 0;

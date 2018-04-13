@@ -261,8 +261,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,0,8
- PRODUCTVERSION 1,0,0,8
+ FILEVERSION 1,0,0,9
+ PRODUCTVERSION 1,0,0,9
  FILEFLAGSMASK 0x17L
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -280,12 +280,12 @@ BEGIN
             VALUE "Comments", "IP Traffic Spy"
             VALUE "CompanyName", "NetworkDLS"
             VALUE "FileDescription", "IP Traffic Spy Utility"
-            VALUE "FileVersion", "1.0.0.8"
+            VALUE "FileVersion", "1.0.0.9"
             VALUE "InternalName", "IP Traffic Spy"
-            VALUE "LegalCopyright", "Copyright © 2017 NetworkDLS. All rights reserved."
+            VALUE "LegalCopyright", "Copyright © 2018 NetworkDLS. All rights reserved."
             VALUE "OriginalFilename", "ISpy.exe"
             VALUE "ProductName", "IP Traffic Spy"
-            VALUE "ProductVersion", "1.0.0.8"
+            VALUE "ProductVersion", "1.0.0.9"
         END
     END
     BLOCK "VarFileInfo"
@@ -355,8 +355,8 @@ END
 STRINGTABLE
 BEGIN
     IDS_TITLECAPTION        "IP Traffic Spy"
-    IDS_FILEVERSION         "1.0.0.8"
-    IDS_APPCOPYRIGHT        "Copyright © 2017 NetworkDLS. All rights reserved."
+    IDS_FILEVERSION         "1.0.0.9"
+    IDS_APPCOPYRIGHT        "Copyright © 2018 NetworkDLS. All rights reserved."
     IDS_REGISTRYKEY         "Software\\NetworkDLS\\IP Traffic Spy"
 END
 

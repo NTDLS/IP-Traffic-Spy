@@ -190,6 +190,12 @@
     <ClInclude Include="NSWFL\NSWFL_Debug.H">
       <Filter>Classes &amp; Libraries\NSWFL</Filter>
     </ClInclude>
+    <ClInclude Include="NSWFL\NSWFL_DictonaryString.H">
+      <Filter>Classes &amp; Libraries\NSWFL</Filter>
+    </ClInclude>
+    <ClInclude Include="NSWFL\NSWFL_DictonaryT.H">
+      <Filter>Classes &amp; Libraries\NSWFL</Filter>
+    </ClInclude>
     <ClInclude Include="NSWFL\NSWFL_File.H">
       <Filter>Classes &amp; Libraries\NSWFL</Filter>
     </ClInclude>

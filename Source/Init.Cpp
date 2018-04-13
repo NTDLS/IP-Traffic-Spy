@@ -17,7 +17,6 @@
 
 bool InitializeApp(void)
 {
-
 	LoadString(ghAppInstance, IDS_APPCOPYRIGHT, gsAppCopyRight, sizeof(gsAppCopyRight));
 	LoadString(ghAppInstance, IDS_FILEVERSION, gsFileVersion, sizeof(gsFileVersion));
 	LoadString(ghAppInstance, IDS_TITLECAPTION, gsTitleCaption, sizeof(gsTitleCaption));
@@ -27,6 +26,12 @@ bool InitializeApp(void)
 	sPackText = (char *)calloc(MAX_PACK_TEXT + 1, 1);
 
 	InitializeCriticalSection(&gCS);
+	InitializeCriticalSection(&gcsHostResolverCache);
+
+	for (int i = 0; i < 10; i++)
+	{
+		/*hResolverThread = */CreateThread(NULL, 0, ResolverThread, (LPVOID)0, 0, NULL);
+	}
 
 	WSADATA wsaData;
 	WSAStartup(MAKEWORD(2,1), &wsaData);
@@ -41,6 +46,7 @@ bool InitializeApp(void)
 bool UninitializeApp(void)
 {
 	DeleteCriticalSection(&gCS);
+	DeleteCriticalSection(&gcsHostResolverCache);
 
 	WSACleanup();
 

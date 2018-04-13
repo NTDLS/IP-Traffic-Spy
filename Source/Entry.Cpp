@@ -15,6 +15,8 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+using namespace NSWFL::Debug;
+
 HINSTANCE ghAppInstance = NULL;
 
 char gsAppCopyRight[64];
@@ -22,6 +24,7 @@ char gsFileVersion[10];
 char gsTitleCaption[64];
 char gsRegistryKey[255];
 char gsBindToIpAddress[255];
+CRITICAL_SECTION gcsHostResolverCache;
 
 char *sPackBuff = NULL;
 char *sPackText = NULL;
@@ -57,6 +60,13 @@ bool DoEvents(void)
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevious, LPSTR CmdLine, int CmdShow)
 {
+#ifdef DEBUG
+	NSWFL::Debug::OpenDebugConsole("IP/Spy");
+	NSWFL::Debug::DebugRedirectOutput();
+#endif
+
+	printf("%s v%s\n", gsTitleCaption, gsFileVersion);
+
 	ghAppInstance = hInstance;
 
 	if(!InitializeApp())

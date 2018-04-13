@@ -32,6 +32,14 @@ using namespace NSWFL::Collections;
 #define MAX_ADDR_LEN 16
 #define MAX_HOST_NAME_SZ 255
 
+typedef struct _tag_HostResolverTask
+{
+	int GridRow;
+	int GridColumn;
+	char *IPAddress;
+	int Sequence;
+} HOSTRESOLVERTASK, *LPHOSTRESOLVERTASK;
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 StringBuilderArray gIncludeSourceIPFilter;
@@ -43,6 +51,9 @@ StringBuilderArray gExcludeSourceIPFilter;
 StringBuilderArray gExcludeTargetIPFilter;
 VectorT<int> gExcludeSourcePortFilter;
 VectorT<int> gExcludeTargetPortFilter;
+
+VectorT<HOSTRESOLVERTASK> gHostResolverQueue;
+DictonaryString gHostResolverCache;
 
 HANDLE hListenThread = NULL;
 
@@ -69,7 +80,7 @@ void PopListBoxFromArray(HWND hWnd, VectorT<int> *arr)
 	char sBuff[128];
 	for (int i = 0; i < arr->Count(); i++)
 	{
-		sprintf_s(sBuff, sizeof(sBuff), "%d", arr->at(i));
+		sprintf_s(sBuff, sizeof(sBuff), "%d", arr->GetValueAtIndex(i));
 		InsertListBoxItem(hWnd, sBuff);
 	}
 }
@@ -441,8 +452,8 @@ void ClearGrid(HWND hGrid)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool AddListBoxItem(const char *sSourceIP, const char *sDestIP, const int iSourcePort, const int iDestPort, 
-					const char *sText, const int iSize, int iProtocol, const int iImage)
+int AddListBoxItem(const char *sSourceIP, char *sSourceHost, const char *sDestIP, char *sDestHost, const int iSourcePort, const int iDestPort,
+					const char *sText, const int iSize, int iProtocol, const int iImage, int iSequence)
 {
 	char sTemp[1024];
 
@@ -560,6 +571,18 @@ bool AddListBoxItem(const char *sSourceIP, const char *sDestIP, const int iSourc
 	lvItem.iItem = iItem;
 	ListView_SetItem(hItemList, &lvItem);
 
+	lvItem.pszText = (char *)sSourceHost;
+	lvItem.mask = LVIF_TEXT;
+	lvItem.iSubItem = COL_S_HOST_POS;
+	lvItem.iItem = iItem;
+	ListView_SetItem(hItemList, &lvItem);
+
+	lvItem.pszText = (char *)sDestHost;
+	lvItem.mask = LVIF_TEXT;
+	lvItem.iSubItem = COL_D_HOST_POS;
+	lvItem.iItem = iItem;
+	ListView_SetItem(hItemList, &lvItem);
+
 	sprintf_s(sTemp, sizeof(sTemp), "%d", iDestPort);
 	lvItem.pszText = sTemp;
 	lvItem.mask = LVIF_TEXT;
@@ -573,6 +596,13 @@ bool AddListBoxItem(const char *sSourceIP, const char *sDestIP, const int iSourc
 	lvItem.iSubItem = COL_SPORT_POS;
 	lvItem.iItem = iItem;
 	ListView_SetItem(hItemList, &lvItem);
+
+	sprintf_s(sTemp, sizeof(sTemp), "%d", iSequence);
+	lvItem.pszText = sTemp;
+	lvItem.mask = LVIF_TEXT;
+	lvItem.iSubItem = COL_RESOLVER_SEQ_POS;
+	lvItem.iItem = iItem;
+	ListView_SetItem(hItemList, &lvItem);	
 
 	char *sDisplayTextPtr = StrnDup(sText, iSize);
 	char *sDisplayText = sDisplayTextPtr;
@@ -614,7 +644,7 @@ bool AddListBoxItem(const char *sSourceIP, const char *sDestIP, const int iSourc
 
 	ListView_EnsureVisible(hItemList, iItem, FALSE);
 
-	return(iItems == 0);
+	return iItem;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -713,6 +743,92 @@ bool CompareIPs(const char *sSIP, const char *sDIP)
 		}
 	}
 	return true;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+bool ResolveIP(char *sIPAddress, char *sOutHost, int iOutHostSz)
+{
+	bool result = false;
+	struct addrinfo    hints;
+	struct addrinfo   *res = 0;
+	int status;
+
+	hints.ai_family = AF_INET;
+
+	if ((status = getaddrinfo(sIPAddress, 0, 0, &res)) == 0)
+	{
+		if ((status = getnameinfo(res->ai_addr, res->ai_addrlen, sOutHost, iOutHostSz, 0, 0, 0)) == 0)
+		{
+			result = true;
+		}
+	}
+	freeaddrinfo(res);
+
+	return result;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+DWORD WINAPI ResolverThread(LPVOID lpVoid)
+{
+	while (!gbShutDownThread)
+	{
+		bool bGotItem = false;
+		HOSTRESOLVERTASK task;
+
+		EnterCriticalSection(&gcsHostResolverCache);
+		{
+			auto originalTask = gHostResolverQueue.FirstPointer();
+			if (originalTask != NULL)
+			{
+				bGotItem = true;
+				memcpy_s(&task, sizeof(task), originalTask, sizeof(task));
+				gHostResolverQueue.DeleteAtIndex(0);
+			}
+		}
+		LeaveCriticalSection(&gcsHostResolverCache);
+
+		if (bGotItem)
+		{
+			char sHostName[255];
+			strcpy_s(sHostName, sizeof(sHostName), "");
+			EnterCriticalSection(&gcsHostResolverCache);
+			auto cachedHost = gHostResolverCache.GetByKey(task.IPAddress);
+			LeaveCriticalSection(&gcsHostResolverCache);
+			if (cachedHost != NULL)
+			{
+				strcpy_s(sHostName, sizeof(sHostName), cachedHost->Value);
+			}
+			else
+			{
+				if (ResolveIP(task.IPAddress, sHostName, sizeof(sHostName)) == false)
+				{
+					strcpy_s(sHostName, sizeof(sHostName), "");
+				}
+				if (strcmp(task.IPAddress, sHostName) == 0)
+				{
+					strcpy_s(sHostName, sizeof(sHostName), "");
+				}
+
+				EnterCriticalSection(&gcsHostResolverCache);
+				gHostResolverCache.Upsert(task.IPAddress, sHostName);
+				LeaveCriticalSection(&gcsHostResolverCache);
+			}
+
+			char sResolverSequence[255];
+			ListView_GetItemText(hItemList, task.GridRow, COL_RESOLVER_SEQ_POS, sResolverSequence, sizeof(sResolverSequence));
+			if (atoi(sResolverSequence) == task.Sequence)
+			{
+ 				ListView_SetItemText(hItemList, task.GridRow, task.GridColumn, sHostName);
+			}
+
+			//printf("%d                  \r", gHostResolverQueue.Count());
+		}
+
+		Sleep(1);
+	}
+	return 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -932,7 +1048,7 @@ DWORD WINAPI ListenThread(LPVOID lpVoid)
 						{
 							if (pIPHeader->proto == IPPROTO_TCP)
 							{
-								if (gIncludeSourcePortFilter.at(iFItem) == ntohs(pTCPHeader->sport))
+								if (gIncludeSourcePortFilter.GetValueAtIndex(iFItem) == ntohs(pTCPHeader->sport))
 								{
 									bShowItem = true;
 									break;
@@ -940,7 +1056,7 @@ DWORD WINAPI ListenThread(LPVOID lpVoid)
 							}
 							else if (pIPHeader->proto == IPPROTO_UDP)
 							{
-								if (gIncludeSourcePortFilter.at(iFItem) == ntohs(pUDPHeader->sport))
+								if (gIncludeSourcePortFilter.GetValueAtIndex(iFItem) == ntohs(pUDPHeader->sport))
 								{
 									bShowItem = true;
 									break;
@@ -952,7 +1068,7 @@ DWORD WINAPI ListenThread(LPVOID lpVoid)
 						{
 							if (pIPHeader->proto == IPPROTO_TCP)
 							{
-								if (gIncludeTargetPortFilter.at(iFItem) == ntohs(pTCPHeader->dport))
+								if (gIncludeTargetPortFilter.GetValueAtIndex(iFItem) == ntohs(pTCPHeader->dport))
 								{
 									bShowItem = true;
 									break;
@@ -960,7 +1076,7 @@ DWORD WINAPI ListenThread(LPVOID lpVoid)
 							}
 							else if (pIPHeader->proto == IPPROTO_UDP)
 							{
-								if (gIncludeTargetPortFilter.at(iFItem) == ntohs(pUDPHeader->dport))
+								if (gIncludeTargetPortFilter.GetValueAtIndex(iFItem) == ntohs(pUDPHeader->dport))
 								{
 									bShowItem = true;
 									break;
@@ -995,7 +1111,7 @@ DWORD WINAPI ListenThread(LPVOID lpVoid)
 						{
 							if (pIPHeader->proto == IPPROTO_TCP)
 							{
-								if (gExcludeSourcePortFilter.at(iFItem) == ntohs(pTCPHeader->sport))
+								if (gExcludeSourcePortFilter.GetValueAtIndex(iFItem) == ntohs(pTCPHeader->sport))
 								{
 									bShowItem = false;
 									break;
@@ -1003,7 +1119,7 @@ DWORD WINAPI ListenThread(LPVOID lpVoid)
 							}
 							else if (pIPHeader->proto == IPPROTO_UDP)
 							{
-								if (gExcludeSourcePortFilter.at(iFItem) == ntohs(pUDPHeader->sport))
+								if (gExcludeSourcePortFilter.GetValueAtIndex(iFItem) == ntohs(pUDPHeader->sport))
 								{
 									bShowItem = false;
 									break;
@@ -1015,7 +1131,7 @@ DWORD WINAPI ListenThread(LPVOID lpVoid)
 						{
 							if (pIPHeader->proto == IPPROTO_TCP)
 							{
-								if (gExcludeTargetPortFilter.at(iFItem) == ntohs(pTCPHeader->dport))
+								if (gExcludeTargetPortFilter.GetValueAtIndex(iFItem) == ntohs(pTCPHeader->dport))
 								{
 									bShowItem = false;
 									break;
@@ -1023,7 +1139,7 @@ DWORD WINAPI ListenThread(LPVOID lpVoid)
 							}
 							else if (pIPHeader->proto == IPPROTO_UDP)
 							{
-								if (gExcludeTargetPortFilter.at(iFItem) == ntohs(pUDPHeader->dport))
+								if (gExcludeTargetPortFilter.GetValueAtIndex(iFItem) == ntohs(pUDPHeader->dport))
 								{
 									bShowItem = false;
 									break;
@@ -1037,12 +1153,22 @@ DWORD WINAPI ListenThread(LPVOID lpVoid)
 
 				if (bShowItem)
 				{
+					EnterCriticalSection(&gcsHostResolverCache);
+					auto sSourceHost = gHostResolverCache.GetByKey(sSourceIP);
+					auto sDestHost = gHostResolverCache.GetByKey(sDestIP);
+					LeaveCriticalSection(&gcsHostResolverCache);
+
+					char *sSourceHostName = sSourceHost != NULL ? sSourceHost->Value : "...";
+					char *sDestHostName = sDestHost != NULL ? sDestHost->Value : "...";
+
+					int iGridRow = -1;
+
 					if (pIPHeader->proto == IPPROTO_TCP)
 					{
 						if (bFilterIncludeTPC)
 						{
-							AddListBoxItem(sSourceIP, sDestIP, ntohs(pTCPHeader->sport),
-								ntohs(pTCPHeader->dport), sPackBuff, iReceiveSize, pIPHeader->proto, iImage);
+							iGridRow = AddListBoxItem(sSourceIP, sSourceHostName, sDestIP, sDestHostName, ntohs(pTCPHeader->sport),
+								ntohs(pTCPHeader->dport), sPackBuff, iReceiveSize, pIPHeader->proto, iImage, (int)i64Packets);
 							itemAdded = true;
 						}
 					}
@@ -1050,18 +1176,45 @@ DWORD WINAPI ListenThread(LPVOID lpVoid)
 					{
 						if (bFilterIncludeUDP)
 						{
-							AddListBoxItem(sSourceIP, sDestIP, ntohs(pUDPHeader->sport),
-								ntohs(pUDPHeader->dport), sPackBuff, iReceiveSize, pIPHeader->proto, iImage);
+							iGridRow = AddListBoxItem(sSourceIP, sSourceHostName, sDestIP, sDestHostName, ntohs(pUDPHeader->sport),
+								ntohs(pUDPHeader->dport), sPackBuff, iReceiveSize, pIPHeader->proto, iImage, (int)i64Packets);
 							itemAdded = true;
-
 						}
 					}
 					else
 					{
 						if (bFilterIncludeOtherProtocols)
 						{
-							AddListBoxItem(sSourceIP, sDestIP, 0, 0, sPackBuff, iReceiveSize, pIPHeader->proto, iImage);
+							iGridRow = AddListBoxItem(sSourceIP, sSourceHostName, sDestIP, sDestHostName,
+								0, 0, sPackBuff, iReceiveSize, pIPHeader->proto, iImage, (int)i64Packets);
 							itemAdded = true;
+						}
+					}
+
+					if (iGridRow >= 0)
+					{
+						if (sSourceHost == NULL)
+						{
+							EnterCriticalSection(&gcsHostResolverCache);
+							HOSTRESOLVERTASK task;
+							task.GridRow = iGridRow;
+							task.GridColumn = COL_S_HOST_POS;
+							task.Sequence = (int)i64Packets;
+							task.IPAddress = _strdup(sSourceIP);
+							gHostResolverQueue.Add(task);
+							LeaveCriticalSection(&gcsHostResolverCache);
+						}
+
+						if (sDestHost == NULL)
+						{
+							EnterCriticalSection(&gcsHostResolverCache);
+							HOSTRESOLVERTASK task;
+							task.GridRow = iGridRow;
+							task.GridColumn = COL_D_HOST_POS;
+							task.Sequence = (int)i64Packets;
+							task.IPAddress = _strdup(sDestIP);
+							gHostResolverQueue.Add(task);
+							LeaveCriticalSection(&gcsHostResolverCache);
 						}
 					}
 

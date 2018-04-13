@@ -67,6 +67,7 @@ typedef struct _TAG_BINARY_DATA {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 extern HANDLE hListenThread;
+//extern HANDLE hResolverThread;
 
 extern StringBuilderArray gIncludeSourceIPFilter;
 extern StringBuilderArray gIncludeTargetIPFilter;
@@ -92,6 +93,7 @@ extern CRITICAL_SECTION gCS;
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 DWORD WINAPI ListenThread(LPVOID lpVoid);
+DWORD WINAPI ResolverThread(LPVOID lpVoid);
 //void FreeExcludeFilters(void);
 //void FreeIncludeFilters(void);
 void PopListBoxFromArray(HWND hWnd, StringBuilderArray *arr);

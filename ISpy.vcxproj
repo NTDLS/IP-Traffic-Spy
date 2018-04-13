@@ -359,6 +359,8 @@
     <ClInclude Include="NSWFL\NSWFL_CRC32.H" />
     <ClInclude Include="NSWFL\NSWFL_DateTime.H" />
     <ClInclude Include="NSWFL\NSWFL_Debug.H" />
+    <ClInclude Include="NSWFL\NSWFL_DictonaryString.H" />
+    <ClInclude Include="NSWFL\NSWFL_DictonaryT.H" />
     <ClInclude Include="NSWFL\NSWFL_File.H" />
     <ClInclude Include="NSWFL\NSWFL_Graphics.H" />
     <ClInclude Include="NSWFL\NSWFL_HighPrecisionTimer.h" />

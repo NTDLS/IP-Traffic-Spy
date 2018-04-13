@@ -1,17 +1,17 @@
 [Setup]
 ;-- Main Setup Information
  AppName                = IP Traffic Spy
- AppVerName             = IP Traffic Spy 1.0.0.8
- AppCopyright           = Copyright © 1995-2017 NetworkDLS.
+ AppVerName             = IP Traffic Spy 1.0.0.9
+ AppCopyright           = Copyright © 1995-2018 NetworkDLS.
  DefaultDirName         = {pf}\NetworkDLS\IP Traffic Spy
  DefaultGroupName       = NetworkDLS\IP Traffic Spy
  UninstallDisplayIcon   = {app}\Resources\IP Traffic Spy.ico
- WizardImageFile        = ..\..\@Resources\Setup\LgSetup.bmp
- WizardSmallImageFile   = ..\..\@Resources\Setup\SmSetup.bmp
+ WizardImageFile        = ..\..\SetupResources\Setup\LgSetup.bmp
+ WizardSmallImageFile   = ..\..\SetupResources\Setup\SmSetup.bmp
  PrivilegesRequired     = Admin
  Uninstallable          = Yes
  AppMutex               = IP Traffic Spy
- LicenseFile            = ..\..\@Resources\Setup\License\EULA.txt
+ LicenseFile            = ..\..\SetupResources\Setup\License\EULA.txt
  Compression            = ZIP/9
  OutputBaseFilename     = IPSpy32
  MinVersion             = 0.0,5.0
@@ -20,10 +20,10 @@
  AppPublisher    = NetworkDLS
  AppPublisherURL = http://www.NetworkDLS.com/
  AppUpdatesURL   = http://www.NetworkDLS.com/
- AppVersion      = 1.0.0.8
+ AppVersion      = 1.0.0.9
 
 [Files]
- Source: "..\..\@AutoUpdate\Win32\Release\AutoUpdate.Exe";    DestDir: "{app}\Bin"; Flags: RestartReplace;
+ Source: "..\..\AutoUpdate\Win32\Release\AutoUpdate.Exe";    DestDir: "{app}\Bin"; Flags: RestartReplace;
  Source: "AutoUpdate.xml";                         DestDir: "{app}"; Flags: IgnoreVersion;
  Source: "..\Release\Win32\ISpy.Exe";              DestDir: "{app}"; Flags: IgnoreVersion;
  Source: "Help File\Help.Chm";                     DestDir: "{app}";

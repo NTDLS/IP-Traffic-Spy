@@ -4,15 +4,18 @@
 //---------------------(Constant Definitions)
 #define MAINDIALOG_MENU_ABOUT 1000
 
-#define COL_DATE_POS	0
-#define COL_TIME_POS	1
-#define COL_PROTO		2
-#define COL_S_IP_POS	3
-#define COL_D_IP_POS	4
-#define COL_SPORT_POS	5
-#define COL_DPORT_POS	6
-#define COL_TEXT_POS	7
-#define COL_SIZE_POS	8
+#define COL_DATE_POS			0
+#define COL_TIME_POS			1
+#define COL_PROTO				2
+#define COL_S_IP_POS			3
+#define COL_S_HOST_POS			4
+#define COL_D_IP_POS			5
+#define COL_D_HOST_POS			6
+#define COL_SPORT_POS			7
+#define COL_DPORT_POS			8
+#define COL_TEXT_POS			9
+#define COL_SIZE_POS			10
+#define COL_RESOLVER_SEQ_POS	11
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //---------------------(Variable Declarations)
