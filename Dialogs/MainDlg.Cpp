@@ -832,7 +832,7 @@ INT_PTR CALLBACK MainDialog(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		DeleteObject(hIcon);
 
 		hStatusBar = CreateStatusWindow(WS_CHILD|WS_VISIBLE, "(Not Connected)", hWnd, 1);
-		int Widths[] = {300, 500, 800, -1};
+		int Widths[] = {180, 350, 520, -1};
 		SendMessage(hStatusBar, (UINT)SB_SETPARTS, (WPARAM)4, (LPARAM)&Widths);
 
 		int iLVStyle = LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT | LVS_EX_HEADERDRAGDROP;

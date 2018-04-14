@@ -840,7 +840,6 @@ DWORD WINAPI ListenThread(LPVOID lpVoid)
 	SOCKET sckSocket;
 	char sText[65535 + 1];
 	DWORD dwBytesRead = 0;
-	char sHostName[MAX_HOST_NAME_SZ];
 	char sLocalIPMask[MAX_ADDR_LEN];
 
 	if ((sckSocket = socket(AF_INET, SOCK_RAW, IPPROTO_IP)) == INVALID_SOCKET) //FIXFIX: Implement IPPROTO_IPV6.
@@ -851,10 +850,8 @@ DWORD WINAPI ListenThread(LPVOID lpVoid)
 		SendMessage(hStatusBar, (UINT)SB_SETTEXT, (WPARAM)0, (LPARAM)sError);
 		return 0;
 	}
-
-	gethostname(sHostName, sizeof(sHostName));
-
-	sprintf_s(sText, sizeof(sText), "Connected to %s (%s)", sHostName, gsBindToIpAddress);
+	
+	sprintf_s(sText, sizeof(sText), "Connected to %s", gsBindToIpAddress);
 	SendMessage(hStatusBar, (UINT)SB_SETTEXT, (WPARAM)0, (LPARAM)sText);
 
 	MakeIPMask(gsBindToIpAddress, sLocalIPMask, sizeof(sLocalIPMask));
@@ -1231,15 +1228,24 @@ DWORD WINAPI ListenThread(LPVOID lpVoid)
 				I64FormatInteger(sPackets, sizeof(sPackets), i64Packets);
 				FileSizeFriendly(i64PakSize, sPakSize, sizeof(sPakSize));
 
-				sprintf_s(sText, sizeof(sText), "All Packets: %s (%s)",
+				sprintf_s(sText, sizeof(sText), "Packets: %s (%s)",
 					I64FormatInteger(sPackets, sizeof(sPackets), i64Packets),
 					FileSizeFriendly(i64PakSize, sPakSize, sizeof(sPakSize)));
 				SendMessage(hStatusBar, (UINT)SB_SETTEXT, (WPARAM)1, (LPARAM)sText);
 
-				sprintf_s(sText, sizeof(sText), "Match Packets: %s (%s)",
+				sprintf_s(sText, sizeof(sText), "Matchs: %s (%s)",
 					I64FormatInteger(sPackets, sizeof(sPackets), i64MatchPackets),
 					FileSizeFriendly(i64MatchPakSize, sPakSize, sizeof(sPakSize)));
 				SendMessage(hStatusBar, (UINT)SB_SETTEXT, (WPARAM)2, (LPARAM)sText);
+
+				char sCache[64];
+				char sQueue[64];
+
+				sprintf_s(sText, sizeof(sText), "DNS Cache %s, Backlog: %s",
+					I64FormatInteger(sCache, sizeof(sCache), gHostResolverCache.Count()),
+					I64FormatInteger(sQueue, sizeof(sQueue), gHostResolverQueue.Count()));
+
+				SendMessage(hStatusBar, (UINT)SB_SETTEXT, (WPARAM)3, (LPARAM)sText);
 
 				LeaveCriticalSection(&gCS);
 			}
