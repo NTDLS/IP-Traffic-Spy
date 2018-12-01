@@ -26,6 +26,7 @@ using namespace NSWFL::File;
 using namespace NSWFL::ListBox;
 using namespace NSWFL::Memory;
 using namespace NSWFL::Collections;
+using namespace NSWFL::Network;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -859,7 +860,11 @@ DWORD WINAPI ListenThread(LPVOID lpVoid)
 	SOCKADDR_IN sa;
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(0);
+#if VER_PRODUCTMAJORVERSION > 6
 	InetPton(AF_INET, gsBindToIpAddress, &sa.sin_addr.s_addr);
+#else
+	legacy_inet_pton(AF_INET, gsBindToIpAddress, &sa.sin_addr.s_addr);
+#endif
 
 	if (bind(sckSocket, (SOCKADDR *)&sa, sizeof(sa)) != 0)
 	{
@@ -960,6 +965,7 @@ DWORD WINAPI ListenThread(LPVOID lpVoid)
 				saSource.sin_addr.s_addr = pIPHeader->sourceIP;
 				saDest.sin_addr.s_addr = pIPHeader->destIP;
 
+#if VER_PRODUCTMAJORVERSION > 6
 				if (InetNtop(AF_INET, &saSource.sin_addr, sTempIP, sizeof(sTempIP)) != NULL)
 				{
 					MakeIPMask(sTempIP, sSourceIPMask, sizeof(sSourceIPMask));
@@ -969,7 +975,19 @@ DWORD WINAPI ListenThread(LPVOID lpVoid)
 					strcpy_s(sSourceIPMask, sizeof(sSourceIPMask), "0.0.0.0");
 					strcpy_s(sSourceIP, sizeof(sSourceIP), sSourceIPMask);
 				}
+#else
+				if (legacy_inet_ntop(AF_INET, &saSource.sin_addr, sTempIP, sizeof(sTempIP)) != NULL)
+				{
+					MakeIPMask(sTempIP, sSourceIPMask, sizeof(sSourceIPMask));
+					strcpy_s(sSourceIP, sizeof(sSourceIP), sTempIP);
+				}
+				else {
+					strcpy_s(sSourceIPMask, sizeof(sSourceIPMask), "0.0.0.0");
+					strcpy_s(sSourceIP, sizeof(sSourceIP), sSourceIPMask);
+				}
+#endif
 
+#if VER_PRODUCTMAJORVERSION > 6
 				if (InetNtop(AF_INET, &saDest.sin_addr, sTempIP, sizeof(sTempIP)))
 				{
 					MakeIPMask(sTempIP, sDestIPMask, sizeof(sDestIPMask));
@@ -979,6 +997,17 @@ DWORD WINAPI ListenThread(LPVOID lpVoid)
 					strcpy_s(sDestIPMask, sizeof(sDestIPMask), "0.0.0.0");
 					strcpy_s(sDestIP, sizeof(sDestIP), sDestIPMask);
 				}
+#else
+				if (legacy_inet_ntop(AF_INET, &saDest.sin_addr, sTempIP, sizeof(sTempIP)))
+				{
+					MakeIPMask(sTempIP, sDestIPMask, sizeof(sDestIPMask));
+					strcpy_s(sDestIP, sizeof(sDestIP), sTempIP);
+				}
+				else {
+					strcpy_s(sDestIPMask, sizeof(sDestIPMask), "0.0.0.0");
+					strcpy_s(sDestIP, sizeof(sDestIP), sDestIPMask);
+				}
+#endif
 
 				int iFItem = 0;
 				int iImage = 0;

@@ -137,6 +137,9 @@
     <ClCompile Include="NSWFL\NSWFL_XMLWriter.Cpp">
       <Filter>Classes &amp; Libraries\NSWFL</Filter>
     </ClCompile>
+    <ClCompile Include="NSWFL\NSWFL_Network.cpp">
+      <Filter>Classes &amp; Libraries\NSWFL</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resources\resource.h">
@@ -281,6 +284,9 @@
       <Filter>Classes &amp; Libraries\NSWFL</Filter>
     </ClInclude>
     <ClInclude Include="NSWFL\NSWFL_XMLWriter.H">
+      <Filter>Classes &amp; Libraries\NSWFL</Filter>
+    </ClInclude>
+    <ClInclude Include="NSWFL\NSWFL_Network.h">
       <Filter>Classes &amp; Libraries\NSWFL</Filter>
     </ClInclude>
   </ItemGroup>
