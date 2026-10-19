@@ -26,6 +26,15 @@
     <ClCompile Include="Source\Init.Cpp">
       <Filter>SourceFiles</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Adapters.Cpp">
+      <Filter>SourceFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Decode.Cpp">
+      <Filter>SourceFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Filters.Cpp">
+      <Filter>SourceFiles</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Routines.Cpp">
       <Filter>SourceFiles</Filter>
     </ClCompile>
@@ -158,6 +167,15 @@
       <Filter>SourceFiles</Filter>
     </ClInclude>
     <ClInclude Include="Source\Init.H">
+      <Filter>SourceFiles</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Adapters.H">
+      <Filter>SourceFiles</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Decode.H">
+      <Filter>SourceFiles</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Filters.H">
       <Filter>SourceFiles</Filter>
     </ClInclude>
     <ClInclude Include="Source\Routines.H">
@@ -309,133 +327,10 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\Cache.bmp">
-      <Filter>Resources</Filter>
-    </None>
-    <None Include="Resources\CGI Folders.bmp">
-      <Filter>Resources</Filter>
-    </None>
-    <None Include="Resources\Compression.bmp">
-      <Filter>Resources</Filter>
-    </None>
-    <None Include="Config Auth.bmp">
-      <Filter>Resources</Filter>
-    </None>
-    <None Include="Resources\Config Auth.bmp">
-      <Filter>Resources</Filter>
-    </None>
-    <None Include="Resources\Config Filter.bmp">
-      <Filter>Resources</Filter>
-    </None>
-    <None Include="Resources\Config Prop Page.bmp">
-      <Filter>Resources</Filter>
-    </None>
-    <None Include="Config Realms.bmp">
-      <Filter>Resources</Filter>
-    </None>
-    <None Include="Resources\Config Realms.bmp">
-      <Filter>Resources</Filter>
-    </None>
-    <None Include="Resources\Config Scripting.bmp">
-      <Filter>Resources</Filter>
-    </None>
-    <None Include="Resources\Config Settings.bmp">
-      <Filter>Resources</Filter>
-    </None>
-    <None Include="Resources\Config WebSites.bmp">
-      <Filter>Resources</Filter>
-    </None>
-    <None Include="Resources\Custom Filters.bmp">
-      <Filter>Resources</Filter>
-    </None>
-    <None Include="Resources\Default Pages.bmp">
-      <Filter>Resources</Filter>
-    </None>
-    <None Include="Resources\Disabled.ico">
-      <Filter>Resources</Filter>
-    </None>
-    <None Include="Resources\Enabled.ico">
-      <Filter>Resources</Filter>
-    </None>
-    <None Include="ErrorPages.bmp">
-      <Filter>Resources</Filter>
-    </None>
-    <None Include="Resources\ErrorPages.bmp">
-      <Filter>Resources</Filter>
-    </None>
-    <None Include="Resources\Extension Filters.bmp">
-      <Filter>Resources</Filter>
-    </None>
     <None Include="Resources\handcurs.cur">
       <Filter>Resources</Filter>
     </None>
-    <None Include="Resources\IP Filters.bmp">
-      <Filter>Resources</Filter>
-    </None>
     <None Include="Resources\MainIcon.ico">
-      <Filter>Resources</Filter>
-    </None>
-    <None Include="Resources\Mime Types.bmp">
-      <Filter>Resources</Filter>
-    </None>
-    <None Include="Resources\Scripting Engines.bmp">
-      <Filter>Resources</Filter>
-    </None>
-    <None Include="Resources\Server.bmp">
-      <Filter>Resources</Filter>
-    </None>
-    <None Include="Resources\Site Started.bmp">
-      <Filter>Resources</Filter>
-    </None>
-    <None Include="Resources\Site Stopped.bmp">
-      <Filter>Resources</Filter>
-    </None>
-    <None Include="Resources\SSI Files.bmp">
-      <Filter>Resources</Filter>
-    </None>
-    <None Include="Resources\Texture.raw">
-      <Filter>Resources</Filter>
-    </None>
-    <None Include="Resources\URL Filters.bmp">
-      <Filter>Resources</Filter>
-    </None>
-    <None Include="Resources\Virtual Roots.bmp">
-      <Filter>Resources</Filter>
-    </None>
-    <None Include="Settings.bmp">
-      <Filter>Resources</Filter>
-    </None>
-    <None Include="Resources\Settings.bmp">
-      <Filter>Resources</Filter>
-    </None>
-    <None Include="Site.bmp">
-      <Filter>Resources</Filter>
-    </None>
-    <None Include="Resources\Site.bmp">
-      <Filter>Resources</Filter>
-    </None>
-    <None Include="Keys.ico">
-      <Filter>Resources</Filter>
-    </None>
-    <None Include="Resources\Keys.ico">
-      <Filter>Resources</Filter>
-    </None>
-    <None Include="Resources\Security.ico">
-      <Filter>Resources</Filter>
-    </None>
-    <None Include="Resources\LookFeel.ico">
-      <Filter>Resources</Filter>
-    </None>
-    <None Include="Resources\General.ico">
-      <Filter>Resources</Filter>
-    </None>
-    <None Include="Resources\CPUSelect.ico">
-      <Filter>Resources</Filter>
-    </None>
-    <None Include="Resources\Advanced.ico">
-      <Filter>Resources</Filter>
-    </None>
-    <None Include="Resources\SmCPU.ico">
       <Filter>Resources</Filter>
     </None>
     <None Include="Resources\Foreign.ico">

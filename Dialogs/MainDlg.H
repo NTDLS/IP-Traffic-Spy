@@ -15,7 +15,13 @@
 #define COL_DPORT_POS			8
 #define COL_TEXT_POS			9
 #define COL_SIZE_POS			10
-#define COL_RESOLVER_SEQ_POS	11
+#define COL_DIR_POS				11
+#define COL_FLAGS_POS			12
+#define COL_TTL_POS				13
+#define COL_IPVER_POS			14
+#define COL_FRAG_POS			15
+#define COL_MATCH_POS			16
+#define COL_RESOLVER_SEQ_POS	17
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //---------------------(Variable Declarations)

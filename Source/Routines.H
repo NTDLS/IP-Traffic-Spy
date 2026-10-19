@@ -2,13 +2,15 @@
 #define _ROUTINES_H
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include "../../NSWFL/NSWFL.H"
+#include "../../NSWFL/ANSI/NSWFL.H"
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 using namespace NSWFL::String;
 using namespace NSWFL::Collections;
 
+#define MAX_ADDR_LEN 16		//Zero-padded IPv4 mask form ("000.000.000.000").
+#define MAX_IP_TEXT 64			//Room for any IPv4/IPv6 address as text.
 #define INITEDITPROC (WM_USER + 1000)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -26,6 +28,16 @@ typedef struct TAG_IP_HDR
 	unsigned int sourceIP;
 	unsigned int destIP;
 }IP_HDR;
+
+typedef struct TAG_IP6_HDR
+{
+	unsigned int vtc_flow;			//Version, traffic class and flow label.
+	unsigned short payload_len;
+	unsigned char next_header;
+	unsigned char hop_limit;
+	unsigned char sourceIP[16];
+	unsigned char destIP[16];
+} IP6_HDR;
 
 typedef struct TAG_TCP_HDR {
 	 unsigned short int sport;
@@ -71,24 +83,31 @@ extern HANDLE hListenThread;
 
 extern StringBuilderArray gIncludeSourceIPFilter;
 extern StringBuilderArray gIncludeTargetIPFilter;
-extern VectorT<int> gIncludeSourcePortFilter;
-extern VectorT<int> gIncludeTargetPortFilter;
+extern StringBuilderArray gIncludeSourcePortFilter;
+extern StringBuilderArray gIncludeTargetPortFilter;
 
 extern StringBuilderArray gExcludeSourceIPFilter;
 extern StringBuilderArray gExcludeTargetIPFilter;
-extern VectorT<int> gExcludeSourcePortFilter;
-extern VectorT<int> gExcludeTargetPortFilter;
+extern StringBuilderArray gExcludeSourcePortFilter;
+extern StringBuilderArray gExcludeTargetPortFilter;
 
 volatile extern bool gbShutDownThread;
-volatile extern bool gbSuspendThread;
+volatile extern bool gbShutDownResolvers;
 volatile extern bool bFilterIncludeTPC;
 volatile extern bool bFilterIncludeUDP;
 volatile extern bool bFilterIncludeOtherProtocols;
 volatile extern bool bFilterIncludeInbpoundPackets;
 volatile extern bool bFilterIncludeOutboundPackets;
+volatile extern bool bFilterHideOwnDns;
+volatile extern bool bAutoScroll;
+volatile extern bool bDnsLookups;
 volatile extern bool bFilterIncludeBroadcastPackets;
 
 extern CRITICAL_SECTION gCS;
+extern volatile LONG gUiWaiting;
+
+#define RESOLVER_THREAD_COUNT 10
+extern HANDLE ghResolverThreads[RESOLVER_THREAD_COUNT];
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -102,10 +121,25 @@ void PopArrayFromListBox(HWND hWnd, StringBuilderArray *arr);
 void PopArrayFromListBox(HWND hWnd, VectorT<int> *arr);
 char *MakeIPMask(const char *sInIP, char *sOutIP, int iMaxSz);
 bool IsValidIPAddress(const char *sIP);
+bool IsValidPort(const char *sPort);
+bool CompareIPs(const char *sSIP, const char *sDIP);
+int GetPayloadOffset(const char *sPacket, int iSize, int iProtocol);
+
+//Walks the IPv4 header, or the IPv6 header and its extension headers. Returns false if this is not a usable IP packet.
+//	piProtocol receives the upper layer protocol, piTransportOffset the offset of the data following the IP headers and
+//	pbHasTransport is false when that data does not start with a transport header (non-first fragments).
+bool WalkIPHeaders(const char *sPacket, int iSize, int *piProtocol, int *piTransportOffset, bool *pbHasTransport, bool *pbIsV6,
+	bool *pbIsFragment = NULL);
+void LockListener(void);
+void UnlockListener(void);
 void ClearGrid(HWND hGrid);
+int ApplyFiltersToGrid(HWND hGrid);
 void CleanText(const char *sBuf, const int iBufSz, char *sOutBuf, int iOutBufSz);
 void CleanRaw(const char *sBuf, const int iBufSz, char *sOutBuf, int iOutBufSz);
 void CleanHex(const char *sBuf, const int iBufSz, char *sOutBuf, int iOutBufSz);
+
+//Attaches the advanced rule syntax documentation as a tooltip.
+void AttachRuleHelp(HWND hDialog, HWND hEdit, HWND hList, HWND hAddButton);
 
 void AddEditHandler(HWND hOwner, HWND hWnd);
 void AddListHandler(HWND hOwner, HWND hWnd);
