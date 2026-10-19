@@ -40,7 +40,7 @@ bool DoEvents(void)
 	{
 		if(iReturnValue != -1)
 		{
-			if(uMsg.message == WM_KEYUP)
+			if(uMsg.message == WM_KEYUP && uMsg.hwnd != hMainDialog) //Do not deliver it twice if the dialog itself has the focus.
 			{
 				SendMessage(hMainDialog, uMsg.message, uMsg.wParam, uMsg.lParam);
 			}
@@ -54,6 +54,18 @@ bool DoEvents(void)
 	}
 
 	return true;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//Dispatches any pending messages without blocking. Used when waiting on another thread
+//	which may be sending messages to the UI thread.
+void PumpMessages(void)
+{
+	//Only service messages which were SENT to this thread (the listener sends them while it owns gCS). Posted input is
+	//	left alone, otherwise a key press or click would re-enter a handler which is itself waiting on the listener.
+	MSG uMsg;
+	PeekMessage(&uMsg, NULL, 0, 0, PM_NOREMOVE | PM_QS_SENDMESSAGE);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -80,6 +92,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevious, LPSTR CmdLine, int 
 		{
 		}
 		Stop();
+		SaveFiltersToRegistry();
 	}
 
     if(!UninitializeApp())
