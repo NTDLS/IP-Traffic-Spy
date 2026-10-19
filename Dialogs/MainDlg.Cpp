@@ -39,6 +39,17 @@ HIMAGELIST hImageList = NULL;
 
 BINARY_DATA *BinDataPointer = NULL;
 
+static bool gbFilterDialogBusy = false; //True while an include/exclude filter dialog is open or opening.
+static bool gbPaused = false; //True while the UI thread owns gCS on behalf of Pause().
+
+//Shows the filter summary (or a short-lived message) in the status bar.
+void UpdateFilterStatus(void)
+{
+	char sText[256];
+	GetFilterSummary(sText, sizeof(sText));
+	SendMessage(hStatusBar, (UINT)SB_SETTEXT, (WPARAM)4, (LPARAM)sText);
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 bool IsPaused(void)
@@ -68,11 +79,12 @@ void Pause(void)
 	sprintf_s(sCaption, sizeof(sCaption), "%s (Paused)", gsTitleCaption);
 	SendMessage(hMainDialog, (UINT)WM_SETTEXT, (WPARAM)0, (LPARAM)sCaption);
 
-	gbSuspendThread = true;
-
-	while(!gbSuspendThread)
+	//The listen thread holds gCS while it processes a packet, so owning it here
+	//	guarantees the thread is idle (and that the filters/grid are safe to modify).
+	if(!gbPaused)
 	{
-		DoEvents();
+		LockListener();
+		gbPaused = true;
 	}
 }
 
@@ -80,72 +92,54 @@ void Pause(void)
 
 void Resume(void)
 {
-	gbSuspendThread = false;
-
 	SendMessage(hMainDialog, (UINT)WM_SETTEXT, (WPARAM)0, (LPARAM)gsTitleCaption);
 	CheckMenuItem(GetMenu(hMainDialog), ID_OPTIONS_PAUSE, MF_BYCOMMAND|MF_UNCHECKED);
 
-	ResumeThread(hListenThread);
+	if(gbPaused)
+	{
+		//Anything that modified the filters did so while paused, make sure the listener sees it.
+		RebuildFilters();
+		UpdateFilterStatus();
+
+		gbPaused = false;
+		UnlockListener();
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void Stop(void)
 {
-	while(!TryEnterCriticalSection(&gCS))
-	{
-		DoEvents();
-	}
+	LockListener();
 
 	if(hListenThread)
 	{
 		gbShutDownThread = true;
-		ResumeThread(hListenThread);
 
-		DWORD dwExitCode = 0;
-		while(GetExitCodeThread(hListenThread, &dwExitCode) != 0)
+		//The thread may be sending messages to this thread, so we have to keep pumping.
+		while(WaitForSingleObject(hListenThread, 0) == WAIT_TIMEOUT)
 		{
-			if(dwExitCode != STILL_ACTIVE)
-			{
-				break;
-			}
-			DoEvents();
+			PumpMessages();
+			Sleep(1);
 		}
+
+		CloseHandle(hListenThread);
 	}
 	hListenThread = NULL;
 
-	/*
-	if (hResolverThread)
-	{
-		gbShutDownThread = true;
-		ResumeThread(hResolverThread);
-
-		DWORD dwExitCode = 0;
-		while (GetExitCodeThread(hResolverThread, &dwExitCode) != 0)
-		{
-			if (dwExitCode != STILL_ACTIVE)
-			{
-				break;
-			}
-			DoEvents();
-		}
-	}
-	hResolverThread = NULL;
-	*/
-
-	LeaveCriticalSection(&gCS);
+	UnlockListener();
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void Start(void)
 {
-	gbShutDownThread = false;
-
 	if(hListenThread)
 	{
 		Stop();
 	}
+
+	gbShutDownThread = false;
 
 	hListenThread = CreateThread(NULL, 0, ListenThread, (LPVOID)0, 0, NULL);
 }
@@ -173,6 +167,273 @@ void Start(void)
 #define MENU_COPY_SOURCE_HOST	 WM_USER + 116
 #define MENU_COPY_TARGET_HOST	 WM_USER + 117
 
+#define MENU_EXCLUDE_CONVERSATION WM_USER + 118
+#define MENU_EXCLUDE_REMOTE_IP	 WM_USER + 119
+#define MENU_EXCLUDE_REMOTE_PORT WM_USER + 120
+#define MENU_EXCLUDE_REMOTE_HOST WM_USER + 121
+#define MENU_EXCLUDE_PROTOCOL	 WM_USER + 122
+#define MENU_INCLUDE_CONVERSATION WM_USER + 123
+#define MENU_INCLUDE_REMOTE_IP	 WM_USER + 124
+#define MENU_INCLUDE_REMOTE_PORT WM_USER + 125
+#define MENU_INCLUDE_REMOTE_HOST WM_USER + 126
+#define MENU_INCLUDE_PROTOCOL	 WM_USER + 127
+#define MENU_REMOVE_FILTERS		 WM_USER + 128
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+enum { KIND_SRC_IP, KIND_DST_IP, KIND_SRC_PORT, KIND_DST_PORT, KIND_CONVERSATION,
+	KIND_REMOTE_IP, KIND_REMOTE_PORT, KIND_REMOTE_HOST, KIND_PROTOCOL };
+
+static bool DecodeFilterAction(WPARAM wCommand, bool *pbInclude, int *piKind)
+{
+	switch(wCommand)
+	{
+	case MENU_EXCLUDE_SOURCE_IP:		*pbInclude = false;	*piKind = KIND_SRC_IP;			return true;
+	case MENU_EXCLUDE_SOURCE_PORT:		*pbInclude = false;	*piKind = KIND_SRC_PORT;		return true;
+	case MENU_EXCLUDE_TARGET_IP:		*pbInclude = false;	*piKind = KIND_DST_IP;			return true;
+	case MENU_EXCLUDE_TARGET_PORT:		*pbInclude = false;	*piKind = KIND_DST_PORT;		return true;
+	case MENU_EXCLUDE_CONVERSATION:		*pbInclude = false;	*piKind = KIND_CONVERSATION;	return true;
+	case MENU_EXCLUDE_REMOTE_IP:		*pbInclude = false;	*piKind = KIND_REMOTE_IP;		return true;
+	case MENU_EXCLUDE_REMOTE_PORT:		*pbInclude = false;	*piKind = KIND_REMOTE_PORT;		return true;
+	case MENU_EXCLUDE_REMOTE_HOST:		*pbInclude = false;	*piKind = KIND_REMOTE_HOST;		return true;
+	case MENU_EXCLUDE_PROTOCOL:			*pbInclude = false;	*piKind = KIND_PROTOCOL;		return true;
+	case MENU_INCLUDE_SOURCE_IP:		*pbInclude = true;	*piKind = KIND_SRC_IP;			return true;
+	case MENU_INCLUDE_SOURCE_PORT:		*pbInclude = true;	*piKind = KIND_SRC_PORT;		return true;
+	case MENU_INCLUDE_TARGET_IP:		*pbInclude = true;	*piKind = KIND_DST_IP;			return true;
+	case MENU_INCLUDE_TARGET_PORT:		*pbInclude = true;	*piKind = KIND_DST_PORT;		return true;
+	case MENU_INCLUDE_CONVERSATION:		*pbInclude = true;	*piKind = KIND_CONVERSATION;	return true;
+	case MENU_INCLUDE_REMOTE_IP:		*pbInclude = true;	*piKind = KIND_REMOTE_IP;		return true;
+	case MENU_INCLUDE_REMOTE_PORT:		*pbInclude = true;	*piKind = KIND_REMOTE_PORT;		return true;
+	case MENU_INCLUDE_REMOTE_HOST:		*pbInclude = true;	*piKind = KIND_REMOTE_HOST;		return true;
+	case MENU_INCLUDE_PROTOCOL:			*pbInclude = true;	*piKind = KIND_PROTOCOL;		return true;
+	}
+	return false;
+}
+
+//Parses the packet which backs a row in the grid.
+static bool GetRowPacket(int iRow, PACKET_INFO *pPacket)
+{
+	LV_ITEM lvItem;
+	memset(&lvItem, 0, sizeof(lvItem));
+	lvItem.mask = LVIF_PARAM;
+	lvItem.iItem = iRow;
+
+	if(!ListView_GetItem(hItemList, &lvItem))
+	{
+		return false;
+	}
+
+	BINARY_DATA *binData = (BINARY_DATA *)lvItem.lParam;
+	return binData != NULL && ParsePacket(binData->sText, binData->iLength, pPacket);
+}
+
+static void GetRowHost(int iRow, int iColumn, char *sOut, int iOutSz)
+{
+	ListView_GetItemText(hItemList, iRow, iColumn, sOut, iOutSz);
+	if(strcmp(sOut, "...") == 0)
+	{
+		sOut[0] = '\0';
+	}
+}
+
+//Builds the filter entry (and chooses the list it belongs in) for the given row and kind of filter.
+static bool BuildSelectionEntry(int iRow, bool bInclude, int iKind, StringBuilderArray **ppList, char *sEntry, int iEntrySz)
+{
+	char sText[1024];
+
+	if(iKind == KIND_SRC_IP || iKind == KIND_DST_IP)
+	{
+		ListView_GetItemText(hItemList, iRow, iKind == KIND_SRC_IP ? COL_S_IP_POS : COL_D_IP_POS, sText, sizeof(sText));
+		if(!NormalizeIPFilter(sText, sEntry, iEntrySz))
+		{
+			return false;
+		}
+
+		if(iKind == KIND_SRC_IP)
+		{
+			*ppList = bInclude ? &gIncludeSourceIPFilter : &gExcludeSourceIPFilter;
+		}
+		else {
+			*ppList = bInclude ? &gIncludeTargetIPFilter : &gExcludeTargetIPFilter;
+		}
+		return true;
+	}
+
+	if(iKind == KIND_SRC_PORT || iKind == KIND_DST_PORT)
+	{
+		ListView_GetItemText(hItemList, iRow, iKind == KIND_SRC_PORT ? COL_SPORT_POS : COL_DPORT_POS, sText, sizeof(sText));
+		if(!NormalizePortFilter(sText, sEntry, iEntrySz))
+		{
+			return false;
+		}
+
+		if(iKind == KIND_SRC_PORT)
+		{
+			*ppList = bInclude ? &gIncludeSourcePortFilter : &gExcludeSourcePortFilter;
+		}
+		else {
+			*ppList = bInclude ? &gIncludeTargetPortFilter : &gExcludeTargetPortFilter;
+		}
+		return true;
+	}
+
+	//Everything else is expressed as an advanced rule.
+	PACKET_INFO packet;
+	if(!GetRowPacket(iRow, &packet))
+	{
+		return false;
+	}
+
+	*ppList = bInclude ? &gIncludeRules : &gExcludeRules;
+
+	//The "remote" end is whichever end is not this machine.
+	bool bSourceIsLocal = IsLocalAddress(packet.SourceAddr);
+
+	if(iKind == KIND_CONVERSATION)
+	{
+		sprintf_s(sEntry, iEntrySz, "ip %s and ip %s", packet.SourceIPText, packet.DestIPText);
+		return true;
+	}
+	else if(iKind == KIND_REMOTE_IP)
+	{
+		sprintf_s(sEntry, iEntrySz, "ip %s", bSourceIsLocal ? packet.DestIPText : packet.SourceIPText);
+		return true;
+	}
+	else if(iKind == KIND_REMOTE_PORT)
+	{
+		int iPort = bSourceIsLocal ? packet.DestPort : packet.SourcePort;
+		if(iPort < 0)
+		{
+			return false;
+		}
+		sprintf_s(sEntry, iEntrySz, "port %d", iPort);
+		return true;
+	}
+	else if(iKind == KIND_REMOTE_HOST)
+	{
+		GetRowHost(iRow, bSourceIsLocal ? COL_D_HOST_POS : COL_S_HOST_POS, sText, sizeof(sText));
+		if(sText[0] == '\0' || strchr(sText, ' ') != NULL)
+		{
+			return false;
+		}
+		sprintf_s(sEntry, iEntrySz, "host %s", sText);
+		return true;
+	}
+	else if(iKind == KIND_PROTOCOL)
+	{
+		const char *sName = NULL;
+		switch(packet.Protocol)
+		{
+		case IPPROTO_TCP:	sName = "tcp";	break;
+		case IPPROTO_UDP:	sName = "udp";	break;
+		case IPPROTO_ICMP:	sName = "icmp";	break;
+		case IPPROTO_IGMP:	sName = "igmp";	break;
+		}
+
+		if(sName)
+		{
+			sprintf_s(sEntry, iEntrySz, "proto %s", sName);
+		}
+		else {
+			sprintf_s(sEntry, iEntrySz, "proto %d", packet.Protocol);
+		}
+		return true;
+	}
+
+	return false;
+}
+
+//Adds a filter built from each of the selected rows.
+static void ApplySelectionFilter(bool bInclude, int iKind)
+{
+	bool bWasPaused = IsPaused();
+	if(bWasPaused == false)
+	{
+		Pause();
+	}
+
+	int iAdded = 0;
+	int iExisting = 0;
+	int iItem = -1;
+
+	while((iItem = ListView_GetNextItem(hItemList, iItem, LVNI_SELECTED)) != -1)
+	{
+		char sEntry[512];
+		StringBuilderArray *pList = NULL;
+
+		if(BuildSelectionEntry(iItem, bInclude, iKind, &pList, sEntry, sizeof(sEntry)))
+		{
+			if(AddFilterEntry(pList, sEntry))
+			{
+				iAdded++;
+			}
+			else {
+				iExisting++;
+			}
+		}
+	}
+
+	RebuildFilters();
+
+	char sMessage[128];
+	if(iAdded == 0 && iExisting > 0)
+	{
+		sprintf_s(sMessage, sizeof(sMessage), "That filter already exists.");
+	}
+	else if(iAdded == 0)
+	{
+		sprintf_s(sMessage, sizeof(sMessage), "Nothing to add for the selection.");
+	}
+	else {
+		sprintf_s(sMessage, sizeof(sMessage), "Added %d %s filter%s%s.", iAdded, bInclude ? "include" : "exclude",
+			iAdded == 1 ? "" : "s", iExisting > 0 ? " (some already existed)" : "");
+	}
+	SetFilterMessage(sMessage);
+	UpdateFilterStatus();
+
+	if(bWasPaused == false)
+	{
+		Resume();
+	}
+}
+
+//Removes any existing filters which match each of the selected rows.
+static void RemoveSelectionFilters(void)
+{
+	bool bWasPaused = IsPaused();
+	if(bWasPaused == false)
+	{
+		Pause();
+	}
+
+	int iRemoved = 0;
+	int iItem = -1;
+
+	while((iItem = ListView_GetNextItem(hItemList, iItem, LVNI_SELECTED)) != -1)
+	{
+		PACKET_INFO packet;
+		if(GetRowPacket(iItem, &packet))
+		{
+			char sSourceHost[MAX_PATH];
+			char sDestHost[MAX_PATH];
+			GetRowHost(iItem, COL_S_HOST_POS, sSourceHost, sizeof(sSourceHost));
+			GetRowHost(iItem, COL_D_HOST_POS, sDestHost, sizeof(sDestHost));
+
+			iRemoved += RemoveFiltersMatching(&packet, sSourceHost, sDestHost);
+		}
+	}
+
+	char sMessage[128];
+	sprintf_s(sMessage, sizeof(sMessage), "Removed %d filter%s.", iRemoved, iRemoved == 1 ? "" : "s");
+	SetFilterMessage(sMessage);
+	UpdateFilterStatus();
+
+	if(bWasPaused == false)
+	{
+		Resume();
+	}
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 LRESULT CALLBACK ItemListProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -188,17 +449,37 @@ LRESULT CALLBACK ItemListProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 
 		if (iSelectedCount > 0)
 		{
-			HMENU hFilterMenu = CreateMenu();
-			AppendMenu(hFilterMenu, MF_STRING, MENU_EXCLUDE_SOURCE_IP, "Exclude Source IP");
-			AppendMenu(hFilterMenu, MF_STRING, MENU_EXCLUDE_SOURCE_PORT, "Exclude Source Port");
-			AppendMenu(hFilterMenu, MF_STRING, MENU_EXCLUDE_TARGET_IP, "Exclude Destination IP");
-			AppendMenu(hFilterMenu, MF_STRING, MENU_EXCLUDE_TARGET_PORT, "Exclude Destination Port");
-			AppendMenu(hFilterMenu, MF_SEPARATOR, MENU_SEPERATOR, "");
-			AppendMenu(hFilterMenu, MF_STRING, MENU_INCLUDE_SOURCE_IP, "Include Source IP");
-			AppendMenu(hFilterMenu, MF_STRING, MENU_INCLUDE_SOURCE_PORT, "Include Source Port");
-			AppendMenu(hFilterMenu, MF_STRING, MENU_INCLUDE_TARGET_IP, "Include Destination IP");
-			AppendMenu(hFilterMenu, MF_STRING, MENU_INCLUDE_TARGET_PORT, "Include Destination Port");
-			InsertMenu(hChild, 0, MF_POPUP | MF_BYPOSITION, (UINT_PTR)hFilterMenu, "Filters");
+				HMENU hFilterMenu = CreateMenu();
+
+				HMENU hExcludeMenu = CreateMenu();
+				AppendMenu(hExcludeMenu, MF_STRING, MENU_EXCLUDE_SOURCE_IP, "Source IP");
+				AppendMenu(hExcludeMenu, MF_STRING, MENU_EXCLUDE_SOURCE_PORT, "Source Port");
+				AppendMenu(hExcludeMenu, MF_STRING, MENU_EXCLUDE_TARGET_IP, "Destination IP");
+				AppendMenu(hExcludeMenu, MF_STRING, MENU_EXCLUDE_TARGET_PORT, "Destination Port");
+				AppendMenu(hExcludeMenu, MF_SEPARATOR, MENU_SEPERATOR, "");
+				AppendMenu(hExcludeMenu, MF_STRING, MENU_EXCLUDE_CONVERSATION, "Conversation (Both Directions)");
+				AppendMenu(hExcludeMenu, MF_STRING, MENU_EXCLUDE_REMOTE_IP, "Remote IP (Either Direction)");
+				AppendMenu(hExcludeMenu, MF_STRING, MENU_EXCLUDE_REMOTE_PORT, "Remote Port (Either Direction)");
+				AppendMenu(hExcludeMenu, MF_STRING, MENU_EXCLUDE_REMOTE_HOST, "Remote Host (Either Direction)");
+				AppendMenu(hExcludeMenu, MF_STRING, MENU_EXCLUDE_PROTOCOL, "Protocol");
+				AppendMenu(hFilterMenu, MF_POPUP, (UINT_PTR)hExcludeMenu, "Exclude");
+
+				HMENU hIncludeMenu = CreateMenu();
+				AppendMenu(hIncludeMenu, MF_STRING, MENU_INCLUDE_SOURCE_IP, "Source IP");
+				AppendMenu(hIncludeMenu, MF_STRING, MENU_INCLUDE_SOURCE_PORT, "Source Port");
+				AppendMenu(hIncludeMenu, MF_STRING, MENU_INCLUDE_TARGET_IP, "Destination IP");
+				AppendMenu(hIncludeMenu, MF_STRING, MENU_INCLUDE_TARGET_PORT, "Destination Port");
+				AppendMenu(hIncludeMenu, MF_SEPARATOR, MENU_SEPERATOR, "");
+				AppendMenu(hIncludeMenu, MF_STRING, MENU_INCLUDE_CONVERSATION, "Conversation (Both Directions)");
+				AppendMenu(hIncludeMenu, MF_STRING, MENU_INCLUDE_REMOTE_IP, "Remote IP (Either Direction)");
+				AppendMenu(hIncludeMenu, MF_STRING, MENU_INCLUDE_REMOTE_PORT, "Remote Port (Either Direction)");
+				AppendMenu(hIncludeMenu, MF_STRING, MENU_INCLUDE_REMOTE_HOST, "Remote Host (Either Direction)");
+				AppendMenu(hIncludeMenu, MF_STRING, MENU_INCLUDE_PROTOCOL, "Protocol");
+				AppendMenu(hFilterMenu, MF_POPUP, (UINT_PTR)hIncludeMenu, "Include");
+
+				AppendMenu(hFilterMenu, MF_SEPARATOR, MENU_SEPERATOR, "");
+				AppendMenu(hFilterMenu, MF_STRING, MENU_REMOVE_FILTERS, "Remove Filters Matching This Packet");
+				InsertMenu(hChild, 0, MF_POPUP | MF_BYPOSITION, (UINT_PTR)hFilterMenu, "Filters");
 
 			HMENU hClipboardMenu = CreateMenu();
 			AppendMenu(hClipboardMenu, MF_STRING, MENU_COPY_TEXT, "Copy Text");
@@ -259,6 +540,7 @@ LRESULT CALLBACK ItemListProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 								Pause();
 							}
 
+							giViewRow = iIndex;
 							DialogBox(ghAppInstance, MAKEINTRESOURCE(IDD_VIEWTEXT), hWnd, ViewTextDialog);
 
 							if (bPauseStatus == false)
@@ -285,7 +567,7 @@ LRESULT CALLBACK ItemListProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 				Pause();
 			}
 
-			int iItemPos = 0;
+			int iItemPos = -1;
 			char sText[65535];
 
 			StringBuilderArray list;
@@ -318,7 +600,7 @@ LRESULT CALLBACK ItemListProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 				Pause();
 			}
 
-			int iItemPos = 0;
+			int iItemPos = -1;
 			char sText[1024];
 
 			StringBuilderArray list;
@@ -356,7 +638,7 @@ LRESULT CALLBACK ItemListProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 				Pause();
 			}
 
-			int iItemPos = 0;
+			int iItemPos = -1;
 			char sText[1024];
 
 			StringBuilderArray list;
@@ -394,7 +676,7 @@ LRESULT CALLBACK ItemListProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 				Pause();
 			}
 
-			int iItemPos = 0;
+			int iItemPos = -1;
 			char sText[1024];
 
 			StringBuilderArray list;
@@ -432,7 +714,7 @@ LRESULT CALLBACK ItemListProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 				Pause();
 			}
 
-			int iItemPos = 0;
+			int iItemPos = -1;
 			char sText[1024];
 
 			StringBuilderArray list;
@@ -470,7 +752,7 @@ LRESULT CALLBACK ItemListProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 				Pause();
 			}
 
-			int iItemPos = 0;
+			int iItemPos = -1;
 			char sText[1024];
 
 			StringBuilderArray list;
@@ -508,7 +790,7 @@ LRESULT CALLBACK ItemListProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 				Pause();
 			}
 
-			int iItemPos = 0;
+			int iItemPos = -1;
 			char sText[1024];
 
 			StringBuilderArray list;
@@ -538,246 +820,20 @@ LRESULT CALLBACK ItemListProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 			}
 		}
 #pragma endregion
-#pragma region Exclude Filters.		
-		else if (wParam == MENU_EXCLUDE_SOURCE_IP)
+else if (wParam == MENU_REMOVE_FILTERS)
 		{
-			bool isPaused = IsPaused();
+			RemoveSelectionFilters();
+		}
+		else
+		{
+			bool bInclude = false;
+			int iKind = 0;
 
-			if(isPaused == false)
+			if (DecodeFilterAction(wParam, &bInclude, &iKind))
 			{
-				Pause();
-			}
-	
-			int iItemPos = 0;
-			char sText[1024];
-
-			while ((iItemPos = ListView_GetNextItem(hItemList, iItemPos, LVNI_SELECTED)) != -1)
-			{
-				ListView_GetItemText(hItemList, iItemPos, COL_S_IP_POS, sText, sizeof(sText));
-
-				char sIPMask[255];
-				MakeIPMask(sText, sIPMask, sizeof(sIPMask));
-
-				if (gExcludeSourceIPFilter.Contiains(sIPMask) == false)
-				{
-					gExcludeSourceIPFilter.Add(sIPMask);
-				}
-			}
-			
-			if (isPaused == false)
-			{
-				Resume();
+				ApplySelectionFilter(bInclude, iKind);
 			}
 		}
-		else if (wParam == MENU_EXCLUDE_TARGET_IP)
-		{
-			bool isPaused = IsPaused();
-
-			if (isPaused == false)
-			{
-				Pause();
-			}
-
-			int iItemPos = 0;
-			char sText[1024];
-
-			while ((iItemPos = ListView_GetNextItem(hItemList, iItemPos, LVNI_SELECTED)) != -1)
-			{
-				ListView_GetItemText(hItemList, iItemPos, COL_D_IP_POS, sText, sizeof(sText));
-
-				char sIPMask[255];
-				MakeIPMask(sText, sIPMask, sizeof(sIPMask));
-
-				if (gExcludeTargetIPFilter.Contiains(sIPMask) == false)
-				{
-					gExcludeTargetIPFilter.Add(sIPMask);
-				}
-			}
-
-			if (isPaused == false)
-			{
-				Resume();
-			}
-		}
-		else if (wParam == MENU_EXCLUDE_SOURCE_PORT)
-		{
-			bool isPaused = IsPaused();
-
-			if (isPaused == false)
-			{
-				Pause();
-			}
-
-			int iItemPos = 0;
-			char sText[1024];
-
-			while ((iItemPos = ListView_GetNextItem(hItemList, iItemPos, LVNI_SELECTED)) != -1)
-			{
-				ListView_GetItemText(hItemList, iItemPos, COL_SPORT_POS, sText, sizeof(sText));
-
-				int iPort = atoi(sText);
-
-				if (gExcludeSourcePortFilter.ContiainsValue(iPort) == false)
-				{
-					gExcludeSourcePortFilter.Add(iPort);
-				}
-			}
-
-			if (isPaused == false)
-			{
-				Resume();
-			}
-		}
-		else if (wParam == MENU_EXCLUDE_TARGET_PORT)
-		{
-			bool isPaused = IsPaused();
-
-			if (isPaused == false)
-			{
-				Pause();
-			}
-
-			int iItemPos = 0;
-			char sText[1024];
-
-			while ((iItemPos = ListView_GetNextItem(hItemList, iItemPos, LVNI_SELECTED)) != -1)
-			{
-				ListView_GetItemText(hItemList, iItemPos, COL_DPORT_POS, sText, sizeof(sText));
-
-				int iPort = atoi(sText);
-
-				if (gExcludeTargetPortFilter.ContiainsValue(iPort) == false)
-				{
-					gExcludeTargetPortFilter.Add(iPort);
-				}
-			}
-
-			if (isPaused == false)
-			{
-				Resume();
-			}
-		}
-#pragma endregion
-#pragma region Include Filters.		
-		else if (wParam == MENU_INCLUDE_SOURCE_IP)
-		{
-			bool isPaused = IsPaused();
-
-			if (isPaused == false)
-			{
-				Pause();
-			}
-
-			int iItemPos = 0;
-			char sText[1024];
-
-			while ((iItemPos = ListView_GetNextItem(hItemList, iItemPos, LVNI_SELECTED)) != -1)
-			{
-				ListView_GetItemText(hItemList, iItemPos, COL_S_IP_POS, sText, sizeof(sText));
-
-				char sIPMask[255];
-				MakeIPMask(sText, sIPMask, sizeof(sIPMask));
-
-				if (gIncludeSourceIPFilter.Contiains(sIPMask) == false)
-				{
-					gIncludeSourceIPFilter.Add(sIPMask);
-				}
-			}
-
-			if (isPaused == false)
-			{
-				Resume();
-			}
-		}
-		else if (wParam == MENU_INCLUDE_TARGET_IP)
-		{
-			bool isPaused = IsPaused();
-
-			if (isPaused == false)
-			{
-				Pause();
-			}
-
-			int iItemPos = 0;
-			char sText[1024];
-
-			while ((iItemPos = ListView_GetNextItem(hItemList, iItemPos, LVNI_SELECTED)) != -1)
-			{
-				ListView_GetItemText(hItemList, iItemPos, COL_D_IP_POS, sText, sizeof(sText));
-
-				char sIPMask[255];
-				MakeIPMask(sText, sIPMask, sizeof(sIPMask));
-
-				if (gIncludeTargetIPFilter.Contiains(sIPMask) == false)
-				{
-					gIncludeTargetIPFilter.Add(sIPMask);
-				}
-			}
-
-			if (isPaused == false)
-			{
-				Resume();
-			}
-		}
-		else if (wParam == MENU_INCLUDE_SOURCE_PORT)
-		{
-			bool isPaused = IsPaused();
-
-			if (isPaused == false)
-			{
-				Pause();
-			}
-
-			int iItemPos = 0;
-			char sText[1024];
-
-			while ((iItemPos = ListView_GetNextItem(hItemList, iItemPos, LVNI_SELECTED)) != -1)
-			{
-				ListView_GetItemText(hItemList, iItemPos, COL_SPORT_POS, sText, sizeof(sText));
-
-				int iPort = atoi(sText);
-
-				if (gIncludeSourcePortFilter.ContiainsValue(iPort) == false)
-				{
-					gIncludeSourcePortFilter.Add(iPort);
-				}
-			}
-
-			if (isPaused == false)
-			{
-				Resume();
-			}
-		}
-		else if (wParam == MENU_INCLUDE_TARGET_PORT)
-		{
-			bool isPaused = IsPaused();
-
-			if (isPaused == false)
-			{
-				Pause();
-			}
-
-			int iItemPos = 0;
-			char sText[1024];
-
-			while ((iItemPos = ListView_GetNextItem(hItemList, iItemPos, LVNI_SELECTED)) != -1)
-			{
-				ListView_GetItemText(hItemList, iItemPos, COL_DPORT_POS, sText, sizeof(sText));
-
-				int iPort = atoi(sText);
-
-				if (gIncludeTargetPortFilter.ContiainsValue(iPort) == false)
-				{
-					gIncludeTargetPortFilter.Add(iPort);
-				}
-			}
-
-			if (isPaused == false)
-			{
-				Resume();
-			}
-		}
-#pragma endregion
 
 	}
 
@@ -832,8 +888,8 @@ INT_PTR CALLBACK MainDialog(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		DeleteObject(hIcon);
 
 		hStatusBar = CreateStatusWindow(WS_CHILD|WS_VISIBLE, "(Not Connected)", hWnd, 1);
-		int Widths[] = {180, 350, 520, -1};
-		SendMessage(hStatusBar, (UINT)SB_SETPARTS, (WPARAM)4, (LPARAM)&Widths);
+		int Widths[] = {260, 430, 600, 780, -1};
+		SendMessage(hStatusBar, (UINT)SB_SETPARTS, (WPARAM)5, (LPARAM)&Widths);
 
 		int iLVStyle = LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT | LVS_EX_HEADERDRAGDROP;
 		SendMessage(hItemList, (UINT)LVM_SETEXTENDEDLISTVIEWSTYLE, (WPARAM)0, (LPARAM)iLVStyle);
@@ -860,7 +916,7 @@ INT_PTR CALLBACK MainDialog(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		lvColumn.fmt       = LVCFMT_LEFT;
 		ListView_InsertColumn(hItemList, lvColumn.iSubItem, &lvColumn);
 
-		lvColumn.cx        = 100;
+		lvColumn.cx        = 140;
 		lvColumn.pszText   = "S-IP";
 		lvColumn.iSubItem  = COL_S_IP_POS;
 		lvColumn.mask      = LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
@@ -874,7 +930,7 @@ INT_PTR CALLBACK MainDialog(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		lvColumn.fmt = LVCFMT_LEFT;
 		ListView_InsertColumn(hItemList, lvColumn.iSubItem, &lvColumn);
 
-		lvColumn.cx        = 100;
+		lvColumn.cx        = 140;
 		lvColumn.pszText   = "D-IP";
 		lvColumn.iSubItem  = COL_D_IP_POS;
 		lvColumn.mask      = LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
@@ -916,12 +972,56 @@ INT_PTR CALLBACK MainDialog(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		lvColumn.fmt       = LVCFMT_LEFT;
 		ListView_InsertColumn(hItemList, lvColumn.iSubItem, &lvColumn);
 
+		lvColumn.cx        = 65;
+		lvColumn.pszText   = "Direction";
+		lvColumn.iSubItem  = COL_DIR_POS;
+		lvColumn.mask      = LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
+		lvColumn.fmt       = LVCFMT_LEFT;
+		ListView_InsertColumn(hItemList, lvColumn.iSubItem, &lvColumn);
+
+		lvColumn.cx        = 110;
+		lvColumn.pszText   = "Flags";
+		lvColumn.iSubItem  = COL_FLAGS_POS;
+		lvColumn.mask      = LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
+		lvColumn.fmt       = LVCFMT_LEFT;
+		ListView_InsertColumn(hItemList, lvColumn.iSubItem, &lvColumn);
+
+		lvColumn.cx        = 40;
+		lvColumn.pszText   = "TTL";
+		lvColumn.iSubItem  = COL_TTL_POS;
+		lvColumn.mask      = LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
+		lvColumn.fmt       = LVCFMT_LEFT;
+		ListView_InsertColumn(hItemList, lvColumn.iSubItem, &lvColumn);
+
+		lvColumn.cx        = 30;
+		lvColumn.pszText   = "IP";
+		lvColumn.iSubItem  = COL_IPVER_POS;
+		lvColumn.mask      = LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
+		lvColumn.fmt       = LVCFMT_LEFT;
+		ListView_InsertColumn(hItemList, lvColumn.iSubItem, &lvColumn);
+
+		lvColumn.cx        = 40;
+		lvColumn.pszText   = "Frag";
+		lvColumn.iSubItem  = COL_FRAG_POS;
+		lvColumn.mask      = LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
+		lvColumn.fmt       = LVCFMT_LEFT;
+		ListView_InsertColumn(hItemList, lvColumn.iSubItem, &lvColumn);
+
+		lvColumn.cx        = 170;
+		lvColumn.pszText   = "Matched By";
+		lvColumn.iSubItem  = COL_MATCH_POS;
+		lvColumn.mask      = LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
+		lvColumn.fmt       = LVCFMT_LEFT;
+		ListView_InsertColumn(hItemList, lvColumn.iSubItem, &lvColumn);
+
 		lvColumn.cx = 0;
 		lvColumn.pszText = "Resolver Context";
 		lvColumn.iSubItem = COL_RESOLVER_SEQ_POS;
 		lvColumn.mask = LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
 		lvColumn.fmt = LVCFMT_LEFT;
 		ListView_InsertColumn(hItemList, lvColumn.iSubItem, &lvColumn);
+
+		UpdateFilterStatus();
 
 		CenterWindow(hWnd);
 
@@ -991,6 +1091,7 @@ INT_PTR CALLBACK MainDialog(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 									Pause();
 								}
 
+								giViewRow = iIndex;
 								DialogBox(ghAppInstance, MAKEINTRESOURCE(IDD_VIEWTEXT), hWnd, ViewTextDialog);
 
 								if(bPauseStatus == false)
@@ -1045,6 +1146,21 @@ INT_PTR CALLBACK MainDialog(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			CheckMenuItem(hMainMenu, ID_FILTERS_OUTBOUNDPACKETS, bFilterIncludeOutboundPackets ? MF_UNCHECKED : MF_CHECKED);
 			bFilterIncludeOutboundPackets = IsMenuItemChecked(hMainMenu, ID_FILTERS_OUTBOUNDPACKETS) != 0;
 		}
+		else if (wParam == ID_OPTIONS_AUTOSCROLL)
+		{
+			CheckMenuItem(hMainMenu, ID_OPTIONS_AUTOSCROLL, bAutoScroll ? MF_UNCHECKED : MF_CHECKED);
+			bAutoScroll = IsMenuItemChecked(hMainMenu, ID_OPTIONS_AUTOSCROLL) != 0;
+		}
+		else if (wParam == ID_OPTIONS_DNSLOOKUPS)
+		{
+			CheckMenuItem(hMainMenu, ID_OPTIONS_DNSLOOKUPS, bDnsLookups ? MF_UNCHECKED : MF_CHECKED);
+			bDnsLookups = IsMenuItemChecked(hMainMenu, ID_OPTIONS_DNSLOOKUPS) != 0;
+		}
+		else if (wParam == ID_FILTERS_HIDEOWNDNS)
+		{
+			CheckMenuItem(hMainMenu, ID_FILTERS_HIDEOWNDNS, bFilterHideOwnDns ? MF_UNCHECKED : MF_CHECKED);
+			bFilterHideOwnDns = IsMenuItemChecked(hMainMenu, ID_FILTERS_HIDEOWNDNS) != 0;
+		}
 		else if (wParam == ID_FILTERS_BROADCASTPACKETS)
 		{
 			CheckMenuItem(hMainMenu, ID_FILTERS_BROADCASTPACKETS, bFilterIncludeBroadcastPackets ? MF_UNCHECKED : MF_CHECKED);
@@ -1082,6 +1198,13 @@ INT_PTR CALLBACK MainDialog(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		}
 		else if(wParam == ID_FILTERS_INCLUDEFILTERS)
 		{
+			//Ignore the request if a filter dialog is already open or being opened.
+			if(gbFilterDialogBusy)
+			{
+				return TRUE;
+			}
+			gbFilterDialogBusy = true;
+
 			bool bPauseStatus = IsPaused();
 
 			if(bPauseStatus == false)
@@ -1090,16 +1213,25 @@ INT_PTR CALLBACK MainDialog(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			}
 
 			DialogBox(ghAppInstance, MAKEINTRESOURCE(IDD_INCLUDEFILTERS), hWnd, IncludeFiltersDialog);
+			UpdateFilterStatus();
 
 			if(bPauseStatus == false)
 			{
 				Resume();
 			}
 
+			gbFilterDialogBusy = false;
 			return TRUE;
 		}
 		else if(wParam == ID_FILTERS_EXCLUDEFILTERS)
 		{
+			//Ignore the request if a filter dialog is already open or being opened.
+			if(gbFilterDialogBusy)
+			{
+				return TRUE;
+			}
+			gbFilterDialogBusy = true;
+
 			bool bPauseStatus = IsPaused();
 
 			if(bPauseStatus == false)
@@ -1108,12 +1240,116 @@ INT_PTR CALLBACK MainDialog(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			}
 
 			DialogBox(ghAppInstance, MAKEINTRESOURCE(IDD_EXCLUDEFILTERS), hWnd, ExcludeFiltersDialog);
+			UpdateFilterStatus();
 
 			if(bPauseStatus == false)
 			{
 				Resume();
 			}
 
+			gbFilterDialogBusy = false;
+			return TRUE;
+		}
+		else if(wParam == ID_FILTERS_CLEARALL || wParam == ID_FILTERS_PRESET_NOISE || wParam == ID_FILTERS_PRESET_WEB)
+		{
+			bool bPauseStatus = IsPaused();
+
+			if(bPauseStatus == false)
+			{
+				Pause();
+			}
+
+			if(wParam == ID_FILTERS_CLEARALL)
+			{
+				ClearAllFilters();
+				SetFilterMessage("All filters cleared.");
+			}
+			else if(wParam == ID_FILTERS_PRESET_NOISE)
+			{
+				AddNoiseExclusions();
+				SetFilterMessage("Added the network noise exclusions.");
+			}
+			else {
+				AddWebOnlyInclusions();
+				SetFilterMessage("Added the web traffic inclusions.");
+			}
+
+			UpdateFilterStatus();
+
+			if(bPauseStatus == false)
+			{
+				Resume();
+			}
+			return TRUE;
+		}
+		else if(wParam == ID_FILTERS_APPLYGRID)
+		{
+			if(MessageBox(hWnd, "This deletes every row in the grid which does not match the current filters. Continue?",
+				gsTitleCaption, MB_ICONQUESTION | MB_YESNO | MB_DEFBUTTON2) == IDYES)
+			{
+				int iRemoved = ApplyFiltersToGrid(hItemList);
+
+				char sMessage[128];
+				sprintf_s(sMessage, sizeof(sMessage), "Removed %d row%s from the grid.", iRemoved, iRemoved == 1 ? "" : "s");
+				SetFilterMessage(sMessage);
+				UpdateFilterStatus();
+			}
+			return TRUE;
+		}
+		else if(wParam == ID_FILTERS_SAVE || wParam == ID_FILTERS_LOAD)
+		{
+			char sFile[MAX_PATH];
+			char sDefaultDir[MAX_PATH];
+			bool bSave = (wParam == ID_FILTERS_SAVE);
+
+			Get_CurrentDirectory(sDefaultDir, sizeof(sDefaultDir));
+			strcpy_s(sFile, sizeof(sFile), bSave ? "Filters.ipsf" : "");
+
+			if(OSFileDialog(hWnd, sFile, sizeof(sFile), "ipsf", bSave ? "Save filters to..." : "Load filters from...",
+				"IP-Spy-Filter-Files\0*.ipsf\0All-Files\0*.*\0\0", sDefaultDir, bSave ? SFD : OFD, 0))
+			{
+				if(bSave)
+				{
+					if(FileAccess(sFile, FExist)
+						&& MessageBox(hWnd, "The specified file already exists, overwrite?",
+							gsTitleCaption, MB_ICONQUESTION | MB_YESNO | MB_DEFBUTTON2) != IDYES)
+					{
+						return TRUE;
+					}
+
+					if(SaveFiltersToFile(sFile))
+					{
+						SetFilterMessage("Filters saved.");
+					}
+					else {
+						MessageBox(hWnd, "Failed to save the filters.", gsTitleCaption, MB_ICONERROR);
+					}
+					UpdateFilterStatus();
+				}
+				else {
+					bool bPauseStatus = IsPaused();
+
+					if(bPauseStatus == false)
+					{
+						Pause();
+					}
+
+					if(LoadFiltersFromFile(sFile))
+					{
+						SetFilterMessage("Filters loaded.");
+					}
+					else {
+						MessageBox(hWnd, "Failed to load the filters, the file could not be read or is not a filter file.",
+							gsTitleCaption, MB_ICONERROR);
+					}
+					UpdateFilterStatus();
+
+					if(bPauseStatus == false)
+					{
+						Resume();
+					}
+				}
+			}
 			return TRUE;
 		}
 		else if(wParam == ID_FILE_EXIT)
@@ -1184,11 +1420,7 @@ INT_PTR CALLBACK MainDialog(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				_splitpath_s(sFile, NULL, NULL, NULL, NULL, NULL, NULL, sDelimiter, sizeof(sDelimiter));
 				if(_strcmpi(sDelimiter, ".CSV") == 0)
 				{
-					strcpy_s(sDelimiter, sizeof(sDelimiter), "\t");
-				}
-				if(_strcmpi(sDelimiter, ".TSV") == 0)
-				{
-					strcpy_s(sDelimiter, sizeof(sDelimiter), "\t");
+					strcpy_s(sDelimiter, sizeof(sDelimiter), ",");
 				}
 				else{
 					strcpy_s(sDelimiter, sizeof(sDelimiter), "\t");
@@ -1197,18 +1429,31 @@ INT_PTR CALLBACK MainDialog(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				if(fopen_s(&fTarget, sFile, "wb") != 0)
 				{
 					MessageBox(hWnd, "Failed to create the specified file.", gsTitleCaption, MB_ICONERROR);
+
+					if(bPauseStatus == false)
+					{
+						Resume();
+					}
 					return TRUE;
 				}
 
 				fprintf(fTarget,
 					"Date%s"
 					"Time%s"
+					"Protocol%s"
 					"Source IP%s"
 					"Destination IP%s"
 					"Source Port%s"
 					"Destination Port%s"
 					"Text%s"
-					"Size\r\n", sDelimiter, sDelimiter, sDelimiter, sDelimiter, sDelimiter, sDelimiter, sDelimiter);
+					"Size%s"
+					"Direction%s"
+					"Flags%s"
+					"TTL%s"
+					"IP Version%s"
+					"Fragment%s"
+					"Matched By\r\n", sDelimiter, sDelimiter, sDelimiter, sDelimiter, sDelimiter, sDelimiter, sDelimiter,
+					sDelimiter, sDelimiter, sDelimiter, sDelimiter, sDelimiter, sDelimiter, sDelimiter);
 
 				while((iIndex = ListView_GetNextItem(hItemList, iIndex, LVNI_ALL)) >= 0)
 				{
@@ -1229,8 +1474,29 @@ INT_PTR CALLBACK MainDialog(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 					ListView_GetItemText(hItemList, iIndex, COL_DPORT_POS, sText, sizeof(sText));
 					fprintf(fTarget, "%s%s", sText, sDelimiter);
 					ListView_GetItemText(hItemList, iIndex, COL_TEXT_POS, sText, sizeof(sText));
-					fprintf(fTarget, "\"%s\"%s", sText, sDelimiter);
+					fputc('\"', fTarget);
+					for(const char *sChar = sText; *sChar; sChar++)
+					{
+						if(*sChar == '\"')
+						{
+							fputc('\"', fTarget); //Escape embedded quotes by doubling them.
+						}
+						fputc(*sChar, fTarget);
+					}
+					fprintf(fTarget, "\"%s", sDelimiter);
 					ListView_GetItemText(hItemList, iIndex, COL_SIZE_POS, sText, sizeof(sText));
+					fprintf(fTarget, "%s%s", sText, sDelimiter);
+					ListView_GetItemText(hItemList, iIndex, COL_DIR_POS, sText, sizeof(sText));
+					fprintf(fTarget, "%s%s", sText, sDelimiter);
+					ListView_GetItemText(hItemList, iIndex, COL_FLAGS_POS, sText, sizeof(sText));
+					fprintf(fTarget, "%s%s", sText, sDelimiter);
+					ListView_GetItemText(hItemList, iIndex, COL_TTL_POS, sText, sizeof(sText));
+					fprintf(fTarget, "%s%s", sText, sDelimiter);
+					ListView_GetItemText(hItemList, iIndex, COL_IPVER_POS, sText, sizeof(sText));
+					fprintf(fTarget, "%s%s", sText, sDelimiter);
+					ListView_GetItemText(hItemList, iIndex, COL_FRAG_POS, sText, sizeof(sText));
+					fprintf(fTarget, "%s%s", sText, sDelimiter);
+					ListView_GetItemText(hItemList, iIndex, COL_MATCH_POS, sText, sizeof(sText));
 					fprintf(fTarget, "%s\r\n", sText);
 				}
 
