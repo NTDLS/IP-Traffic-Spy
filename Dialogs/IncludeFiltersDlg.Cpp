@@ -37,6 +37,8 @@ INT_PTR CALLBACK IncludeFiltersDialog(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 	static HWND hDIPEdit	= NULL;
 	static HWND hSPortEdit	= NULL;
 	static HWND hDPortEdit	= NULL;
+	static HWND hRuleList	= NULL;
+	static HWND hRuleEdit	= NULL;
 
 	//--------------------------------------------------------------------------
 
@@ -60,21 +62,28 @@ INT_PTR CALLBACK IncludeFiltersDialog(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 		hDIPEdit	= GetDlgItem(hWnd, IDC_EDIT_DIP);
 		hSPortEdit	= GetDlgItem(hWnd, IDC_EDIT_SPORT);
 		hDPortEdit	= GetDlgItem(hWnd, IDC_EDIT_DPORT);
+		hRuleList	= GetDlgItem(hWnd, IDC_LIST_RULE);
+		hRuleEdit	= GetDlgItem(hWnd, IDC_EDIT_RULE);
 
 		AddEditHandler(hWnd, hSIPEdit);
 		AddEditHandler(hWnd, hDIPEdit);
 		AddEditHandler(hWnd, hSPortEdit);
 		AddEditHandler(hWnd, hDPortEdit);
+		AddEditHandler(hWnd, hRuleEdit);
 
 		AddListHandler(hWnd, hSIPList);
 		AddListHandler(hWnd, hDIPList);
 		AddListHandler(hWnd, hSPortList);
 		AddListHandler(hWnd, hDPortList);
+		AddListHandler(hWnd, hRuleList);
+		AttachRuleHelp(hWnd, hRuleEdit, hRuleList, GetDlgItem(hWnd, IDC_BUTTON_RULE));
 
 		PopListBoxFromArray(hSIPList, &gIncludeSourceIPFilter);
 		PopListBoxFromArray(hDIPList, &gIncludeTargetIPFilter);
 		PopListBoxFromArray(hSPortList, &gIncludeSourcePortFilter);
 		PopListBoxFromArray(hDPortList, &gIncludeTargetPortFilter);
+		PopListBoxFromArray(hRuleList, &gIncludeRules);
+		CheckDlgButton(hWnd, IDC_CHECK_MATCHALL, gbIncludeMatchAll ? BST_CHECKED : BST_UNCHECKED);
 
 		CenterOverOwner(hWnd);
 
@@ -91,13 +100,12 @@ INT_PTR CALLBACK IncludeFiltersDialog(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 			char sIPMask[255];
 			if(Get_Text(hSIPEdit, sIP, sizeof(sIP)) <= sizeof(sIP))
 			{
-				if(!IsValidIPAddress(sIP))
+				if(!NormalizeIPFilter(sIP, sIPMask, sizeof(sIPMask)))
 				{
-					MessageBox(hWnd, "Enter a valid IP address.", gsTitleCaption, MB_ICONWARNING);
+					MessageBox(hWnd, "Enter a valid IP address, wildcard mask (10.0.?.?) or CIDR block (10.0.0.0/8, 2001:db8::/32).", gsTitleCaption, MB_ICONWARNING);
 					return TRUE;
 				}
 				Set_Text(hSIPEdit, "");
-				MakeIPMask(sIP, sIPMask, sizeof(sIPMask));
 				InsertListBoxItemNoDuplicate(hSIPList, sIPMask);
 			}
 		}
@@ -107,13 +115,12 @@ INT_PTR CALLBACK IncludeFiltersDialog(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 			char sIPMask[255];
 			if(Get_Text(hDIPEdit, sIP, sizeof(sIP)) <= sizeof(sIP))
 			{
-				if(!IsValidIPAddress(sIP))
+				if(!NormalizeIPFilter(sIP, sIPMask, sizeof(sIPMask)))
 				{
-					MessageBox(hWnd, "Enter a valid IP address.", gsTitleCaption, MB_ICONWARNING);
+					MessageBox(hWnd, "Enter a valid IP address, wildcard mask (10.0.?.?) or CIDR block (10.0.0.0/8, 2001:db8::/32).", gsTitleCaption, MB_ICONWARNING);
 					return TRUE;
 				}
 				Set_Text(hDIPEdit, "");
-				MakeIPMask(sIP, sIPMask, sizeof(sIPMask));
 				InsertListBoxItemNoDuplicate(hDIPList, sIPMask);
 			}
 		}
@@ -122,10 +129,15 @@ INT_PTR CALLBACK IncludeFiltersDialog(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 			char sText[255];
 			if(Get_Text(hSPortEdit, sText, sizeof(sText)) <= sizeof(sText))
 			{
-				if(atol(sText) >= 0)
+				char sPort[64];
+				if(!NormalizePortFilter(sText, sPort, sizeof(sPort)))
+				{
+					MessageBox(hWnd, "Enter a valid port (0-65535) or port range (1024-65535).", gsTitleCaption, MB_ICONWARNING);
+				}
+				else
 				{
 					Set_Text(hSPortEdit, "");
-					InsertListBoxItemNoDuplicate(hSPortList, sText);
+					InsertListBoxItemNoDuplicate(hSPortList, sPort);
 				}
 			}
 		}
@@ -134,13 +146,37 @@ INT_PTR CALLBACK IncludeFiltersDialog(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 			char sText[255];
 			if(Get_Text(hDPortEdit, sText, sizeof(sText)) <= sizeof(sText))
 			{
-				if(atol(sText) >= 0)
+				char sPort[64];
+				if(!NormalizePortFilter(sText, sPort, sizeof(sPort)))
+				{
+					MessageBox(hWnd, "Enter a valid port (0-65535) or port range (1024-65535).", gsTitleCaption, MB_ICONWARNING);
+				}
+				else
 				{
 					Set_Text(hDPortEdit, "");
-					InsertListBoxItemNoDuplicate(hDPortList, sText);
+					InsertListBoxItemNoDuplicate(hDPortList, sPort);
 				}
 			}
 		}
+			else if(wParam == IDC_BUTTON_RULE)
+			{
+				char sRule[512];
+				char sError[256];
+				if(Get_Text(hRuleEdit, sRule, sizeof(sRule)) > 0)
+				{
+					if(!ValidateRule(sRule, sError, sizeof(sError)))
+					{
+						MessageBox(hWnd, sError, gsTitleCaption, MB_ICONWARNING);
+						return TRUE;
+					}
+					Set_Text(hRuleEdit, "");
+					InsertListBoxItemNoDuplicate(hRuleList, sRule);
+				}
+			}
+			else if(wParam == IDC_BUTTON_RULE_DEL)
+			{
+				DeleteSingleListBoxItemFriendly(hRuleList);
+			}
 		else if(wParam == IDC_BUTTON_SIP_DEL)
 		{
 			DeleteSingleListBoxItemFriendly(hSIPList);
@@ -163,6 +199,9 @@ INT_PTR CALLBACK IncludeFiltersDialog(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 			PopArrayFromListBox(hDIPList, &gIncludeTargetIPFilter);
 			PopArrayFromListBox(hSPortList, &gIncludeSourcePortFilter);
 			PopArrayFromListBox(hDPortList, &gIncludeTargetPortFilter);
+				PopArrayFromListBox(hRuleList, &gIncludeRules);
+				gbIncludeMatchAll = (IsDlgButtonChecked(hWnd, IDC_CHECK_MATCHALL) == BST_CHECKED);
+				RebuildFilters();
 
 			EndDialog(hWnd, 0);
 			DestroyWindow(hWnd);

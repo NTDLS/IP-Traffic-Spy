@@ -22,72 +22,47 @@ using namespace NSWFL::ListView;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool IsValidIPAddressV4(const char *sIP)
+bool IsValidBindAddress(const char *sIP)
 {
-	char **sIPs = Split(sIP, ".");
+	unsigned char addr[16];
+	bool bIsV6 = false;
 
-	if(UBound(sIPs) != 4)
-	{
-		FreeArray(sIPs);
-		return false;
-	}
-
-	int iOctLen = 0;
-
-	for(unsigned short iOct = 0; iOct < 4; iOct++)
-	{
-		if((iOctLen = (int)strlen(sIPs[iOct])) > 3)
-		{
-			FreeArray(sIPs);
-			return false;
-		}
-
-		for(int iPos = 0; iPos < iOctLen; iPos++)
-		{
-			if(!IsNumeric(sIPs[iOct][iPos]))
-			{
-				FreeArray(sIPs);
-				return false;
-			}
-		}
-
-		if(atol(sIPs[iOct]) > 255)
-		{
-			FreeArray(sIPs);
-			return false;
-		}
-	}
-
-	FreeArray(sIPs);
-
-	return true;
+	return ParseIPAddress(sIP, addr, &bIsV6, NULL);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+//Lists the IPv4 and IPv6 addresses of the adapters which are up. Selecting one captures on its adapter.
 void PopIPAddresses(HWND hList)
 {
-	char sHostName[1024];
-	memset(sHostName, 0, sizeof(sHostName));
+	std::vector<LOCAL_ADDRESS> addresses;
+	GetLocalAddresses(&addresses);
 
-	if(gethostname(sHostName, sizeof(sHostName)) == 0)
+	const char *sFirst = NULL;
+
+	for(size_t i = 0; i < addresses.size(); i++)
 	{
-		struct hostent FAR *pHostent = gethostbyname(sHostName);
-		if(pHostent)
-		{
-			struct in_addr Address;
-			for(int i = 0; (*pHostent).h_addr_list[i]; i++)
-			{
-				memcpy(&Address.s_addr, (*pHostent).h_addr_list[i], (*pHostent).h_length);
-				SendMessage(hList, (UINT) CB_ADDSTRING, (WPARAM) NULL, (LPARAM) inet_ntoa(Address));
-			}
+		SendMessage(hList, (UINT) CB_ADDSTRING, (WPARAM) NULL, (LPARAM) addresses[i].Text);
 
-			Set_Text(hList, inet_ntoa(Address));
+		//Default to the first IPv4 address, that is what this used to list.
+		if(sFirst == NULL && addresses[i].Family == AF_INET)
+		{
+			sFirst = addresses[i].Text;
 		}
+	}
+
+	if(sFirst == NULL && addresses.size() > 0)
+	{
+		sFirst = addresses[0].Text;
+	}
+
+	if(sFirst)
+	{
+		Set_Text(hList, (char *)sFirst);
 	}
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////
 
 INT_PTR CALLBACK BindToDialog(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -127,9 +102,9 @@ INT_PTR CALLBACK BindToDialog(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 			char sIP[sizeof(gsBindToIpAddress)];
 
 			int iLength = Get_Text(hIP, sIP, sizeof(sIP));
-			if(iLength <= 0 || iLength >= sizeof(sIP) || !IsValidIPAddressV4(sIP))
+			if(iLength <= 0 || iLength >= sizeof(sIP) || !IsValidBindAddress(sIP))
 			{
-				MessageBox(hWnd, "You must specify a valid v4 IP Address.", gsTitleCaption, MB_ICONINFORMATION);
+				MessageBox(hWnd, "You must specify a valid IPv4 or IPv6 address.", gsTitleCaption, MB_ICONINFORMATION);
 				return FALSE;
 			}
 
