@@ -3,22 +3,38 @@
        <TITLE>Known Issues</TITLE>
     </HEAD>
     <BODY LINK="#0000FF" VLINK="#800080">
-        <Table Border="0" Width="570"><TR><TD>
-    
+        <Table Border="0" Width="570" CellPadding="0" CellSpacing="0"><TR><TD>
+
             <CENTER><P><IMG SRC="AppLogo.gif"></P></CENTER>
-            
-            <H2 ALIGN=CENTER><FONT COLOR="#0000FF">Known Issues</FONT></H1>
+
+            <H2 ALIGN=CENTER><FONT COLOR="#0000FF">Known Issues &amp; Limitations</FONT></H2>
             <P><HR WIDTH="100%"></P>
-            
-            <P><I>IP Traffic Spy</I> would not of been released if there were any &quot;<I>known</I>&quot; Issues.</P>
-            
-            <P>Windows 95 kernel does not have sufficient threading support to run
-            <I>IP Traffic Spy</I>, therefore <I>IP Traffic Spy</I> WILL NOT run on a windows 95 platform.</P>
-            
-            <P>If you have found error in <I>IP Traffic Spy</I> please see
+            <P><I>IP Traffic Spy</I> would not have been released if there were any &quot;<I>known</I>&quot; bugs, but there are some limits
+            that come from how Windows allows programs to capture traffic:</P>
+
+            <UL>
+                <LI><B>Administrator rights are required</B> to capture packets.</LI>
+                <LI><B>One adapter at a time.</B> Only the adapter you connect to is watched (both its IPv4 and IPv6 traffic).</LI>
+                <LI><B>Loopback traffic</B> (programs talking to each other on the same computer) is generally not visible.</LI>
+                <LI><B>IPv6 headers.</B> Windows may deliver IPv6 packets <I>without</I> their header. The program detects this: it rebuilds the
+                    addresses but cannot know the protocol, ports or flags, so those packets show only addresses and size.</LI>
+                <LI><B>Switched networks</B> only deliver your own traffic and broadcasts/multicasts to your adapter.</LI>
+                <LI><B>Packets are not recorded while paused</B> or while a dialog is open.</LI>
+                <LI><B>Encrypted traffic</B> cannot be read. The program shows connection details (addresses, ports, TLS server name, handshake
+                    parameters) but never decrypts anything.</LI>
+                <LI><B>Only individual packets are shown.</B> HTTP headers or TLS handshakes that span several packets are not reassembled,
+                    and text split across packets is not found by <TT>contains</TT>.</LI>
+                <LI><B>Checksums</B> on packets your computer sends often look invalid due to checksum offload.</LI>
+                <LI><B>Fragments:</B> only the first fragment of a datagram has ports, flags and readable data. Later fragments are shown with
+                    ports 0 and <TT>Frag = Yes</TT>.</LI>
+                <LI><B>Host name rules</B> using wildcards depend on reverse DNS, which often does not match the name you know a site by.</LI>
+                <LI><B>Size limits.</B> The grid keeps up to 100,000 rows or 512 MB of packet data. Older rows are discarded.</LI>
+                <LI>The program needs a recent version of Windows; it will not run on old systems such as Windows 95.</LI>
+            </UL>
+
+            <P>If you have found an error in <I>IP Traffic Spy</I> please see
             <A Href="Reporting Bugs.Html">Reporting Bugs</A>
             under the &quot;Contact&quot; section in this help file.</P>
-
         </TD></TR></Table>
     </BODY>
 </HTML>

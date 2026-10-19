@@ -1,0 +1,68 @@
+<HTML>
+    <HEAD>
+       <TITLE>Troubleshooting</TITLE>
+    </HEAD>
+    <BODY LINK="#0000FF" VLINK="#800080">
+        <Table Border="0" Width="570" CellPadding="0" CellSpacing="0"><TR><TD>
+
+            <CENTER><P><IMG SRC="AppLogo.gif"></P></CENTER>
+
+            <H2 ALIGN=CENTER><FONT COLOR="#0000FF">Troubleshooting</FONT></H2>
+            <P><HR WIDTH="100%"></P>
+            <H3>Nothing shows in the grid</H3>
+            <UL>
+                <LI><B>Are you running as administrator?</B> Without it Windows refuses to open the capture socket. Look at the left of the status bar for
+                    an error message, then restart the program as an administrator.</LI>
+                <LI><B>Is the status bar saying "Connected to ..."?</B> If it says <TT>(Not Connected)</TT> use <B>File &gt; Change Connection</B>.</LI>
+                <LI><B>Did you pick the right adapter?</B> If you have a wired connection, Wi-Fi, a VPN and virtual adapters, only the one you chose is watched.</LI>
+                <LI><B>Is it paused?</B> The title bar says "(Paused)". Press the Space Bar.</LI>
+                <LI><B>Are filters hiding everything?</B> Check the right of the status bar. Any <I>include</I> filter hides everything that does not match it.
+                    Try <B>Filters &gt; Clear All Filters</B>. Also check that TCP, UDP, Other Protocols and the Broadcast / Inbound / Outbound
+                    options on the Filters menu are ticked.</LI>
+                <LI><B>Host name rules:</B> if you have a <TT>host</TT> rule, packets are shown only once the name is known - see
+                    <A Href="Advanced Rules.Html#hosts">Host names</A>.</LI>
+                <LI>Security software can interfere with packet capture. Try allowing the program.</LI>
+            </UL>
+
+            <H3>I cannot see another computer's traffic</H3>
+            <P>You only see what reaches your network adapter. On a switched network that is your own traffic plus broadcasts and multicasts. To see
+            other machines' traffic you need to run the program on the machine in question, or on a switch port set up to mirror
+            ("span") the traffic.</P>
+
+            <H3>I cannot see traffic between programs on this computer</H3>
+            <P>Traffic over the loopback address (<TT>127.0.0.1</TT> / <TT>::1</TT>) does not usually pass through your network adapter, and is generally
+            not visible.</P>
+
+            <H3>Host names show "..." or are blank</H3>
+            <UL>
+                <LI><TT>...</TT> means the lookup is still waiting - watch the <TT>Backlog</TT> in the status bar. Lookups run a few at a time, and
+                    slow DNS servers or many new addresses can make them queue.</LI>
+                <LI>A blank name means the address simply has no reverse DNS name. This is very common for home and mobile networks.</LI>
+                <LI>Host names depend on your DNS server. If your DNS is unreachable, lookups fail.</LI>
+                <LI>Check that <B>Actions &gt; DNS Lookups</B> is ticked. With it off, new addresses are never looked up.</LI>
+            </UL>
+
+            <H3>IPv6 packets show no ports or protocol</H3>
+            <P>Windows does not always supply the IPv6 header on capture sockets. When it does not, the program tells you in the status bar
+            (<TT>IPv6 protocol/ports unavailable</TT>) and IPv6 rows show their addresses and size only. IPv4 is not affected. See
+            <A Href="Known Issues.Html">Known Issues</A>.</P>
+
+            <H3>A packet I sent has an invalid checksum</H3>
+            <P>This is normal, it is "checksum offload". See <A Href="Packet Details.Html">Packet Details</A>.</P>
+
+            <H3>The Text column looks like gibberish</H3>
+            <P>The data is probably encrypted (TLS/HTTPS, SSH, VPN) or compressed or binary. The program shows only printable characters there. Open
+            <A Href="Packet Details.Html">Packet Details</A> and use the HEX view for the exact bytes. For TLS the connection's server name is shown
+            in the Text column of the opening packet.</P>
+
+            <H3>Packets are missing</H3>
+            <P>While the program is paused, or a dialog is open, packets are not recorded. Very heavy traffic can also overflow the operating
+            system's small capture buffer, in which case some packets are dropped - use filters to keep the volume down.</P>
+
+            <H3>The grid is empty after changing a filter</H3>
+            <P>You may have used <B>Apply Filters To Grid</B>, which deletes rows that do not match. Otherwise changing filters affects only new packets.</P>
+
+            <P>Still stuck? See <A Href="Reporting Bugs.Html">Reporting Bugs</A>.</P>
+        </TD></TR></Table>
+    </BODY>
+</HTML>

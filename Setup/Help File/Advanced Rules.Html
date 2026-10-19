@@ -1,0 +1,89 @@
+<HTML>
+    <HEAD>
+       <TITLE>Advanced Rules</TITLE>
+    </HEAD>
+    <BODY LINK="#0000FF" VLINK="#800080">
+        <Table Border="0" Width="570" CellPadding="0" CellSpacing="0"><TR><TD>
+
+            <CENTER><P><IMG SRC="AppLogo.gif"></P></CENTER>
+
+            <H2 ALIGN=CENTER><FONT COLOR="#0000FF">Advanced Rules</FONT></H2>
+            <P><HR WIDTH="100%"></P>
+            <P>An <B>Advanced Rule</B> is a single filter entry made of one or more <B>terms</B>. A packet matches the rule only when
+            <B>all</B> of its terms match. The word <TT>and</TT> between terms is optional and just makes a rule easier to read. Each rule
+            in the list is a separate alternative: a packet needs to match just one of the rules. Keywords are not case sensitive.</P>
+
+            <P>Hover over the Advanced Rules section of the Include or Exclude dialog to see this reference as a tool tip.</P>
+
+            <H3>Terms</H3>
+<CENTER><TABLE BORDER=1 CELLPADDING=4 CELLSPACING=0 WIDTH="560">
+<TR><TD BGCOLOR="#E0E0FF"><B>Term</B></TD><TD BGCOLOR="#E0E0FF"><B>Matches</B></TD></TR>
+<TR><TD VALIGN=TOP><TT>src &lt;ip&gt;</TT></TD><TD VALIGN=TOP>The <B>source</B> IP address.</TD></TR>
+<TR><TD VALIGN=TOP><TT>dst &lt;ip&gt;</TT></TD><TD VALIGN=TOP>The <B>destination</B> IP address.</TD></TR>
+<TR><TD VALIGN=TOP><TT>ip &lt;ip&gt;</TT></TD><TD VALIGN=TOP>Either the source or the destination address. Use two <TT>ip</TT> terms to follow a conversation in both directions.</TD></TR>
+<TR><TD VALIGN=TOP><TT>sport &lt;port&gt;</TT></TD><TD VALIGN=TOP>The source port.</TD></TR>
+<TR><TD VALIGN=TOP><TT>dport &lt;port&gt;</TT></TD><TD VALIGN=TOP>The destination port.</TD></TR>
+<TR><TD VALIGN=TOP><TT>port &lt;port&gt;</TT></TD><TD VALIGN=TOP>Either port.</TD></TR>
+<TR><TD VALIGN=TOP><TT>proto &lt;protocol&gt;</TT></TD><TD VALIGN=TOP>The IP protocol (for IPv6, the protocol after any extension headers).</TD></TR>
+<TR><TD VALIGN=TOP><TT>flags &lt;list&gt;</TT></TD><TD VALIGN=TOP>TCP flags. Every listed flag must be set; put <TT>!</TT> in front of a flag to require it to be clear.</TD></TR>
+<TR><TD VALIGN=TOP><TT>shost &lt;name&gt;</TT></TD><TD VALIGN=TOP>The host name of the source.</TD></TR>
+<TR><TD VALIGN=TOP><TT>dhost &lt;name&gt;</TT></TD><TD VALIGN=TOP>The host name of the destination.</TD></TR>
+<TR><TD VALIGN=TOP><TT>host &lt;name&gt;</TT></TD><TD VALIGN=TOP>The host name of either end.</TD></TR>
+<TR><TD VALIGN=TOP><TT>contains &lt;text&gt;</TT></TD><TD VALIGN=TOP>The packet data (after the headers) contains the text, ignoring case.</TD></TR>
+</TABLE></CENTER>
+
+            <H3>Values</H3>
+<CENTER><TABLE BORDER=1 CELLPADDING=4 CELLSPACING=0 WIDTH="560">
+<TR><TD BGCOLOR="#E0E0FF"><B>Used with</B></TD><TD BGCOLOR="#E0E0FF"><B>Value</B></TD></TR>
+<TR><TD VALIGN=TOP><TT>src dst ip</TT></TD><TD VALIGN=TOP>An IP address (<TT>192.168.1.5</TT>), IPv4 wildcard (<TT>10.0.?.?</TT>), CIDR block (<TT>10.0.0.0/8</TT>, <TT>fe80::/10</TT>) or IPv6 address (<TT>2001:db8::1</TT>).</TD></TR>
+<TR><TD VALIGN=TOP><TT>sport dport port</TT></TD><TD VALIGN=TOP>A port (<TT>443</TT>) or an inclusive range (<TT>1024-65535</TT>).</TD></TR>
+<TR><TD VALIGN=TOP><TT>proto</TT></TD><TD VALIGN=TOP>A name: <TT>tcp udp icmp icmpv6 igmp gre esp ah sctp</TT>, or a protocol number from 0 to 255.</TD></TR>
+<TR><TD VALIGN=TOP><TT>flags</TT></TD><TD VALIGN=TOP>A comma separated list of <TT>fin syn rst psh ack urg ece cwr</TT>, e.g. <TT>syn,!ack</TT>. Only TCP packets have flags.</TD></TR>
+<TR><TD VALIGN=TOP><TT>shost dhost host</TT></TD><TD VALIGN=TOP>A host name. See <A Href="#hosts">Host names</A> below.</TD></TR>
+<TR><TD VALIGN=TOP><TT>contains</TT></TD><TD VALIGN=TOP>The text to find. Put it in "double quotes" if it contains spaces: <TT>contains "user-agent: curl"</TT>.</TD></TR>
+</TABLE></CENTER>
+
+            <H3>Examples</H3>
+<CENTER><TABLE BORDER=1 CELLPADDING=4 CELLSPACING=0 WIDTH="560">
+<TR><TD BGCOLOR="#E0E0FF"><B>Rule</B></TD><TD BGCOLOR="#E0E0FF"><B>What it finds</B></TD></TR>
+<TR><TD VALIGN=TOP><TT>port 53</TT></TD><TD VALIGN=TOP>DNS traffic in either direction.</TD></TR>
+<TR><TD VALIGN=TOP><TT>ip 10.1.2.3 and ip 10.1.2.9</TT></TD><TD VALIGN=TOP>Everything between those two machines, both directions.</TD></TR>
+<TR><TD VALIGN=TOP><TT>src 192.168.0.0/16 and dport 1024-65535</TT></TD><TD VALIGN=TOP>Traffic from the local network to high ports.</TD></TR>
+<TR><TD VALIGN=TOP><TT>proto tcp and flags syn,!ack and dport 22</TT></TD><TD VALIGN=TOP>Incoming SSH connection attempts (SYN without ACK).</TD></TR>
+<TR><TD VALIGN=TOP><TT>proto tcp and flags rst</TT></TD><TD VALIGN=TOP>Connection resets.</TD></TR>
+<TR><TD VALIGN=TOP><TT>host *.microsoft.com</TT></TD><TD VALIGN=TOP>Anything to or from a Microsoft host.</TD></TR>
+<TR><TD VALIGN=TOP><TT>host example.com and port 443</TT></TD><TD VALIGN=TOP>HTTPS traffic to or from example.com.</TD></TR>
+<TR><TD VALIGN=TOP><TT>proto icmpv6</TT></TD><TD VALIGN=TOP>IPv6 neighbor discovery, ping and friends.</TD></TR>
+<TR><TD VALIGN=TOP><TT>contains "password"</TT></TD><TD VALIGN=TOP>Unencrypted packets that mention a password.</TD></TR>
+</TABLE></CENTER>
+
+            <P>If a rule has a mistake (an unknown term, a missing value, a bad address or port) the dialog tells you what is wrong when you
+            press <B>Add</B>, and the rule is not added.</P>
+
+            <A NAME="hosts"></A>
+            <H3>Host names</H3>
+            <UL>
+                <LI>A <B>plain name</B> such as <TT>example.com</TT> is looked up for you. The rule then matches that site's IP addresses
+                    (IPv4 and IPv6), and also any address whose reverse DNS name contains the text. The lookup repeats every few minutes
+                    because sites change addresses, and a failed lookup is retried after about half a minute.</LI>
+                <LI>A name with <B>wildcards</B> (<TT>*</TT> for any text, <TT>?</TT> for one character), such as <TT>*.example.com</TT>, is
+                    compared with the address's <I>reverse DNS</I> name only. The name is filled in by reverse DNS shortly after an address is
+                    first seen, so the first few packets of a brand new address may be missed by a wildcard rule.</LI>
+                <LI>Reverse DNS names belong to the <I>address</I> and often differ from the name you typed in a browser (large sites,
+                    content networks and hosting companies commonly have unrelated reverse names). Use a plain name where you can.</LI>
+                <LI>Host names are looked up for every address seen, even those your filters hide.</LI>
+            </UL>
+
+            <H3>Notes</H3>
+            <UL>
+                <LI>A rule needs at least one term. <TT>port</TT>, <TT>sport</TT> and <TT>dport</TT> terms never match packets without ports
+                    (ICMP, other protocols, non-first fragments); <TT>flags</TT> never matches non-TCP packets.</LI>
+                <LI><TT>contains</TT> searches the data after the IP and TCP/UDP headers of that one packet. Encrypted (TLS) traffic will
+                    not contain readable text, and text split across two packets will not be found.</LI>
+                <LI>To match the Matched By column back to a rule, look for the rule text shown there with the prefix <TT>Rule:</TT>.</LI>
+                <LI>Rules are kept exactly as you typed them. Use <B>Remove Filters Matching This Packet</B> or the dialog's Delete button to
+                    remove them.</LI>
+            </UL>
+        </TD></TR></Table>
+    </BODY>
+</HTML>

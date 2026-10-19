@@ -11,5 +11,36 @@ Language=0x409 English (United States)
 Title=IP Traffic Spy
 
 
-[INFOTYPES]
+[FILES]
+Advanced Rules.Html
+Contact.Html
+Copyrights.Html
+EULA.Html
+Exclude Dialog.Html
+Filters Overview.Html
+Getting Started.Html
+Include Dialog.Html
+Known Issues.Html
+Main Dialog and Data Grid.Html
+Packet Details.Html
+PreLicense.html
+Privacy and Responsible Use.Html
+Privacy Policy.html
+Reporting Bugs.Html
+Requesting Features.Html
+Require.html
+Shortcuts.Html
+Troubleshooting.Html
+Welcome.Html
+What is.Html
+Whats It For.Html
+Whats New.Html
+AppLogo.gif
+Main Dialog.png
+Include Dialog.gif
+Exclude Dialog.gif
+Sent Packet.GIF
+Received Packet.GIF
+Foreign Packet.GIF
 
+[INFOTYPES]

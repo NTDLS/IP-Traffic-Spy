@@ -1,0 +1,44 @@
+<HTML>
+    <HEAD>
+       <TITLE>Getting Started</TITLE>
+    </HEAD>
+    <BODY LINK="#0000FF" VLINK="#800080">
+        <Table Border="0" Width="570" CellPadding="0" CellSpacing="0"><TR><TD>
+
+            <CENTER><P><IMG SRC="AppLogo.gif"></P></CENTER>
+
+            <H2 ALIGN=CENTER><FONT COLOR="#0000FF">Getting Started</FONT></H2>
+            <P><HR WIDTH="100%"></P>
+            <H3>1. Run as administrator</H3>
+            <P>See <A Href="Require.html">Requirements</A>. Without administrator rights Windows will not let the program read packets.</P>
+
+            <H3>2. Choose a connection</H3>
+            <P>When the program starts it asks which address to bind to. The list shows the IPv4 and IPv6 addresses of every network
+            adapter that is currently up. Pick the address on the adapter you want to watch and press <B>Ok</B>.</P>
+            <UL>
+                <LI>Choosing any address watches that <B>adapter</B>: both its IPv4 and IPv6 traffic are captured.</LI>
+                <LI>You can also type an address that is not in the list; then only that single address is bound.</LI>
+                <LI>To switch adapters later use <B>File &gt; Change Connection</B>.</LI>
+                <LI><B>Cancel</B> at startup closes the program.</LI>
+            </UL>
+            <P>The left part of the status bar shows <TT>Connected to ...</TT> once capture is running, or an explanation if it could not start.</P>
+
+            <H3>3. Watch the grid</H3>
+            <P>Packets appear in the <A Href="Main Dialog and Data Grid.Html">Data Grid</A> as they arrive. Press the <B>Space Bar</B> to pause and
+            read; press it again to resume (packets that pass while paused are not recorded).</P>
+
+            <H3>4. Narrow things down</H3>
+            <P>Right-click a packet and use <B>Filters</B> to include or exclude things like its remote host, port or protocol, or press
+            <B>I</B> / <B>E</B> to open the <A Href="Include Dialog.Html">Include</A> / <A Href="Exclude Dialog.Html">Exclude</A> dialogs.
+            On a network full of background noise, <B>Filters &gt; Preset: Hide Network Noise</B> is a good first click.
+            See <A Href="Filters Overview.Html">Filters</A> for how it all fits together.</P>
+
+            <H3>5. Look closer</H3>
+            <P>Double-click any row (or right-click &gt; <B>Details</B>) to see the packet broken down field by field in
+            <A Href="Packet Details.Html">Packet Details</A>.</P>
+
+            <H3>6. Keep what you found</H3>
+            <P><B>File &gt; Save Data</B> writes the grid to a text, tab or comma separated file.</P>
+        </TD></TR></Table>
+    </BODY>
+</HTML>

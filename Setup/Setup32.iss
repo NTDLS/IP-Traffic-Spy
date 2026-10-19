@@ -1,30 +1,25 @@
 [Setup]
 ;-- Main Setup Information
  AppName                = IP Traffic Spy
- AppVerName             = IP Traffic Spy 1.0.0.9
- AppCopyright           = Copyright © 1995-2018 NetworkDLS.
- DefaultDirName         = {pf}\NetworkDLS\IP Traffic Spy
+ AppVerName             = IP Traffic Spy 1.0.1.0
+ AppCopyright           = Copyright © 1995-2026 NetworkDLS.
+ DefaultDirName         = {commonpf}\NetworkDLS\IP Traffic Spy
  DefaultGroupName       = NetworkDLS\IP Traffic Spy
  UninstallDisplayIcon   = {app}\Resources\IP Traffic Spy.ico
- WizardImageFile        = ..\..\SetupResources\Setup\LgSetup.bmp
- WizardSmallImageFile   = ..\..\SetupResources\Setup\SmSetup.bmp
  PrivilegesRequired     = Admin
  Uninstallable          = Yes
  AppMutex               = IP Traffic Spy
- LicenseFile            = ..\..\SetupResources\Setup\License\EULA.txt
- Compression            = ZIP/9
+ Compression            = bZIP/9
  OutputBaseFilename     = IPSpy32
- MinVersion             = 0.0,5.0
-
+ SetupIconFile          = ..\Resources\MainIcon.ico
+ 
 ;-- Windows 2000 & XP (Support Dialog)
  AppPublisher    = NetworkDLS
  AppPublisherURL = http://www.NetworkDLS.com/
  AppUpdatesURL   = http://www.NetworkDLS.com/
- AppVersion      = 1.0.0.9
+ AppVersion      = 1.0.1.0
 
 [Files]
- Source: "..\..\AutoUpdate\Win32\Release\AutoUpdate.Exe";    DestDir: "{app}\Bin"; Flags: RestartReplace;
- Source: "AutoUpdate.xml";                         DestDir: "{app}"; Flags: IgnoreVersion;
  Source: "..\Release\Win32\ISpy.Exe";              DestDir: "{app}"; Flags: IgnoreVersion;
  Source: "Help File\Help.Chm";                     DestDir: "{app}";
  Source: "Resources\*.*";                          DestDir: "{app}\Resources";
@@ -33,7 +28,6 @@
  Name: "{group}\IP Traffic Spy";  Filename: "{app}\ISpy.Exe";
  Name: "{group}\Help";            Filename: "{app}\Help.Chm";
  Name: "{group}\Uninstall";       Filename: "{uninstallexe}";
- Name: "{group}\AutoUpdate";      Filename: "{app}\AutoUpdate.Exe";
 
 [Registry]
  Root: HKLM; Subkey: "Software\NetworkDLS\IP Traffic Spy"; Flags: uninsdeletekey noerror;

@@ -1,0 +1,54 @@
+<HTML>
+    <HEAD>
+       <TITLE>Packet Details</TITLE>
+    </HEAD>
+    <BODY LINK="#0000FF" VLINK="#800080">
+        <Table Border="0" Width="570" CellPadding="0" CellSpacing="0"><TR><TD>
+
+            <CENTER><P><IMG SRC="AppLogo.gif"></P></CENTER>
+
+            <H2 ALIGN=CENTER><FONT COLOR="#0000FF">Packet Details</FONT></H2>
+            <P><HR WIDTH="100%"></P>
+            <P>Double-click a row in the grid, or right-click it and choose <B>Details</B>, to open Packet Details. It shows one packet
+            in two panes: a <B>decoded pane</B> on top and the <B>packet bytes</B> below. While the dialog is open capture is paused.
+            The dialog can be resized, minimized or maximized.</P>
+
+            <H3>Moving between packets</H3>
+            <P>The <B>Prev</B> and <B>Next</B> buttons (keyboard: <B>Alt+P</B> and <B>Alt+N</B>) step through the grid's rows without closing
+            the dialog. The row selected in the grid follows along, so you are left where you were looking when you close it. The
+            title bar and the box under the buttons show which packet you are on.</P>
+
+            <H3>The decoded pane</H3>
+            <P>Switch it on or off with <B>Decoded headers</B>. It starts with what the grid knows (when it was captured, direction, the
+            addresses and host names, and what <A Href="Include Dialog.Html">include</A> filter matched) and then decodes the packet:</P>
+<CENTER><TABLE BORDER=1 CELLPADDING=4 CELLSPACING=0 WIDTH="560">
+<TR><TD BGCOLOR="#E0E0FF"><B>Layer</B></TD><TD BGCOLOR="#E0E0FF"><B>What you see</B></TD></TR>
+<TR><TD VALIGN=TOP><B>IPv4</B></TD><TD VALIGN=TOP>Header length, type of service (DSCP/ECN), total length, identification, flags (DF/MF), fragment offset, TTL, protocol, the header checksum and whether it is valid, source and destination, and any options.</TD></TR>
+<TR><TD VALIGN=TOP><B>IPv6</B></TD><TD VALIGN=TOP>Traffic class, flow label, payload length, next header, hop limit, source and destination, and each extension header (hop-by-hop, routing, fragment with its offset and identification, destination options, authentication).</TD></TR>
+<TR><TD VALIGN=TOP><B>TCP</B></TD><TD VALIGN=TOP>Ports (with the service name, e.g. <TT>443 (https)</TT>), sequence and acknowledgment numbers, header length, flags, window, checksum, urgent pointer, and the options: maximum segment size, window scale, SACK, timestamps and more.</TD></TR>
+<TR><TD VALIGN=TOP><B>UDP</B></TD><TD VALIGN=TOP>Ports, length and checksum.</TD></TR>
+<TR><TD VALIGN=TOP><B>ICMP / ICMPv6</B></TD><TD VALIGN=TOP>Type and code in words (echo request, destination unreachable, neighbor solicitation, ...), checksum, and the identifier and sequence for echo messages.</TD></TR>
+<TR><TD VALIGN=TOP><B>DNS</B></TD><TD VALIGN=TOP>Transaction id, opcode, flags, response code and counts; every question; and the answer, authority and additional records including the address, name, MX, SRV, TXT and SOA data. Used for UDP and TCP port 53, and mDNS / LLMNR.</TD></TR>
+<TR><TD VALIGN=TOP><B>HTTP</B></TD><TD VALIGN=TOP>The request or status line and every header line, and how many body bytes are in this packet. Only unencrypted HTTP can be read.</TD></TR>
+<TR><TD VALIGN=TOP><B>TLS</B></TD><TD VALIGN=TOP>The records in the packet. For a <I>ClientHello</I> and <I>ServerHello</I>: version, the cipher suites offered or chosen, and the extensions, including the server name (SNI), supported versions, groups and key shares and the ALPN protocols. The data after the handshake is encrypted and is shown only as "Application Data".</TD></TR>
+</TABLE></CENTER>
+
+            <P>Fields that continue in a following packet (a TLS handshake or HTTP headers split across packets) are labelled as such.
+            Packets that were truncated or damaged show what could be decoded.</P>
+
+            <P><B>Checksum note:</B> packets that your own computer sends commonly show an invalid IPv4 header checksum. This is normal:
+            network adapters fill the checksum in <I>after</I> the packet has been captured ("checksum offload").</P>
+
+            <H3>The bytes pane</H3>
+            <UL>
+                <LI><B>HEX</B>: a hex dump: offset, 16 bytes per line (in two groups of eight) and an ASCII column on the right where
+                    anything that is not printable shows as a dot.</LI>
+                <LI><B>Printable ASCII</B>: only the printable characters of the data.</LI>
+                <LI><B>Raw</B>: the data as is, with zero bytes shown as spaces.</LI>
+                <LI><B>Omit Packet header?</B> (on by default): start the bytes at the data after the IP and TCP/UDP headers. Untick it to
+                    see the whole packet from the first byte of the IP header; hex offsets then count from the start of the packet.</LI>
+                <LI><B>Wrap text?</B>: wrap long lines instead of scrolling sideways.</LI>
+            </UL>
+        </TD></TR></Table>
+    </BODY>
+</HTML>

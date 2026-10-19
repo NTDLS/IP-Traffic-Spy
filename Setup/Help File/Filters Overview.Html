@@ -1,0 +1,98 @@
+<HTML>
+    <HEAD>
+       <TITLE>Filters Overview</TITLE>
+    </HEAD>
+    <BODY LINK="#0000FF" VLINK="#800080">
+        <Table Border="0" Width="570" CellPadding="0" CellSpacing="0"><TR><TD>
+
+            <CENTER><P><IMG SRC="AppLogo.gif"></P></CENTER>
+
+            <H2 ALIGN=CENTER><FONT COLOR="#0000FF">Filters Overview</FONT></H2>
+            <P><HR WIDTH="100%"></P>
+            <P>A busy network produces far more packets than anyone wants to read. <I>IP Traffic Spy</I> filters let you choose which ones
+            appear. There are two lists of filters, <B>Include</B> and <B>Exclude</B>, opened with <B>I</B> and <B>E</B> (or the
+            <B>Filters</B> menu).</P>
+
+            <H3>How a packet is judged</H3>
+            <P>Each packet goes through these steps in order. If it fails any step it is not shown.</P>
+            <OL>
+                <LI><B>Direction</B>: the <B>Broadcast / Inbound / Outbound Packets</B> options on the Filters menu.</LI>
+                <LI><B>Include filters</B>: if there are <I>no</I> include entries, every packet passes. Otherwise the packet must match
+                    them (see below).</LI>
+                <LI><B>Exclude filters</B>: if the packet matches <I>any</I> exclude entry it is hidden, even if it matched an include entry.</LI>
+                <LI><B>Protocol</B>: the <B>TCP / UDP / Other Protocols</B> options on the Filters menu.</LI>
+            </OL>
+
+            <H3>Include filters: any, or all</H3>
+            <P>Include entries are arranged in five <B>groups</B>: source IPs, destination IPs, source ports, destination ports and
+            advanced rules. By default a packet passes if it matches <B>any</B> entry in <B>any</B> group:</P>
+            <P><TT>Source IP 10.0.0.0/8</TT> + <TT>Destination port 443</TT> &nbsp;shows packets from 10.x.x.x <I>or</I> to port 443.</P>
+            <P>Tick <B>Require every filter group that has entries to match (AND)</B> in the Include dialog, and a packet must match
+            at least one entry in <I>each</I> group that has entries. The same two entries then show only packets from 10.x.x.x
+            <I>and</I> to port 443.</P>
+            <P>For more control, an <A Href="Advanced Rules.Html">Advanced Rule</A> combines any number of conditions with AND in a single entry, and can
+            match either direction.</P>
+
+            <A NAME="cidr"></A>
+            <H3>IP address entries</H3>
+<CENTER><TABLE BORDER=1 CELLPADDING=4 CELLSPACING=0 WIDTH="560">
+<TR><TD BGCOLOR="#E0E0FF"><B>You type</B></TD><TD BGCOLOR="#E0E0FF"><B>Matches</B></TD></TR>
+<TR><TD VALIGN=TOP><TT>192.168.1.5</TT></TD><TD VALIGN=TOP>That one IPv4 address.</TD></TR>
+<TR><TD VALIGN=TOP><TT>192.168.1.?</TT></TD><TD VALIGN=TOP>IPv4 with <TT>?</TT> wildcards, each standing for one digit. <TT>10.0.?.?</TT> is 10.0.0.0 to 10.0.9.9; use CIDR for real ranges.</TD></TR>
+<TR><TD VALIGN=TOP><TT>10.0.0.0/8</TT></TD><TD VALIGN=TOP>A CIDR block: every address in the network. <TT>192.168.1.77/24</TT> is shown as <TT>192.168.1.0/24</TT>.</TD></TR>
+<TR><TD VALIGN=TOP><TT>2001:db8::1</TT></TD><TD VALIGN=TOP>One IPv6 address.</TD></TR>
+<TR><TD VALIGN=TOP><TT>fe80::/10</TT></TD><TD VALIGN=TOP>An IPv6 CIDR block (prefix length 0 to 128).</TD></TR>
+</TABLE></CENTER>
+
+            <A NAME="ports"></A>
+            <H3>Port entries</H3>
+            <P>A single port such as <TT>443</TT>, or an inclusive range such as <TT>1024-65535</TT> (0 to 65535). Ports only exist on
+            TCP and UDP packets that carry their header, so ICMP packets, other protocols and fragments after the first never match a
+            port entry. That means an include <I>port</I> filter hides them, while an exclude port filter leaves them alone.</P>
+
+            <A NAME="presets"></A>
+            <H3>Presets</H3>
+            <UL>
+                <LI><B>Hide Network Noise</B> adds exclude rules for DNS (53), NTP (123), NetBIOS (137-139), SSDP (1900), mDNS (5353),
+                    LLMNR (5355), multicast addresses (224.0.0.0/4), the broadcast address (255.255.255.255) and IGMP.</LI>
+                <LI><B>Web Traffic Only</B> adds include rules for ports 80, 443, 8080 and 8443.</LI>
+            </UL>
+            <P>Presets are simply added to your existing filters; use <B>Clear All Filters</B> to start over.</P>
+
+            <A NAME="rightclick"></A>
+            <H3>Right-click filters</H3>
+            <P>Select one or more rows, right-click, and choose <B>Filters &gt; Exclude</B> or <B>Include</B>:</P>
+<CENTER><TABLE BORDER=1 CELLPADDING=4 CELLSPACING=0 WIDTH="560">
+<TR><TD BGCOLOR="#E0E0FF"><B>Item</B></TD><TD BGCOLOR="#E0E0FF"><B>Adds</B></TD></TR>
+<TR><TD VALIGN=TOP>Source IP / Port, Destination IP / Port</TD><TD VALIGN=TOP>An entry for that exact value, in the matching list.</TD></TR>
+<TR><TD VALIGN=TOP>Conversation (Both Directions)</TD><TD VALIGN=TOP>A rule matching the two addresses in either direction: <TT>ip A and ip B</TT>.</TD></TR>
+<TR><TD VALIGN=TOP>Remote IP (Either Direction)</TD><TD VALIGN=TOP>A rule for the address at the <I>other</I> end (the one that is not this computer): <TT>ip A</TT>.</TD></TR>
+<TR><TD VALIGN=TOP>Remote Port (Either Direction)</TD><TD VALIGN=TOP>A rule for the remote end's port, e.g. <TT>port 443</TT>.</TD></TR>
+<TR><TD VALIGN=TOP>Remote Host (Either Direction)</TD><TD VALIGN=TOP>A rule for the remote host name, e.g. <TT>host example.com</TT>. Only available once the name is known.</TD></TR>
+<TR><TD VALIGN=TOP>Protocol</TD><TD VALIGN=TOP>A rule for the packet's protocol, e.g. <TT>proto udp</TT>.</TD></TR>
+</TABLE></CENTER>
+
+            <P>The status bar confirms what was added, and tells you if the filter already existed. <B>Remove Filters Matching This Packet</B>
+            deletes every existing include and exclude entry that the selected packet matches - handy for undoing a filter without opening
+            the dialogs.</P>
+
+            <H3>Filters and the grid</H3>
+            <UL>
+                <LI>Filters only affect packets that arrive <I>after</I> you change them. To tidy rows that are already in the grid use
+                    <B>Filters &gt; Apply Filters To Grid</B>. This <B>deletes</B> the rows that would not be shown; it asks first.</LI>
+                <LI>The <B>Matched By</B> column shows which include entries let each packet through.</LI>
+                <LI>The status bar shows the filter count and how many packets have been hidden.</LI>
+            </UL>
+
+            <H3>Remembering and sharing filters</H3>
+            <UL>
+                <LI>Your filters are <B>saved automatically when you exit</B> and restored the next time you start. They are stored for the
+                    current Windows user (<TT>HKEY_CURRENT_USER\Software\NetworkDLS\IP Traffic Spy\Filters</TT>).</LI>
+                <LI><B>Filters &gt; Save Filters...</B> writes them to a <TT>.ipsf</TT> text file and <B>Load Filters...</B> reads one
+                    back (replacing the current filters). Keep a file per situation - "web debugging", "DNS only" - and share them with others.
+                    A file that is not a filter file is rejected without changing anything.</LI>
+                <LI><B>Clear All Filters</B> empties both lists and the AND option.</LI>
+            </UL>
+        </TD></TR></Table>
+    </BODY>
+</HTML>

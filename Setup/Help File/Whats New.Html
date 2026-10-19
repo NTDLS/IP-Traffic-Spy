@@ -1,0 +1,62 @@
+<HTML>
+    <HEAD>
+       <TITLE>Whats New</TITLE>
+    </HEAD>
+    <BODY LINK="#0000FF" VLINK="#800080">
+        <Table Border="0" Width="570" CellPadding="0" CellSpacing="0"><TR><TD>
+
+            <CENTER><P><IMG SRC="AppLogo.gif"></P></CENTER>
+
+            <H2 ALIGN=CENTER><FONT COLOR="#0000FF">What's New in <I>IP Traffic Spy</I> 1.0.1</FONT></H2>
+            <P><HR WIDTH="100%"></P>
+            <H3>IPv6</H3>
+            <UL>
+                <LI>IPv4 <B>and</B> IPv6 traffic is captured at the same time on the adapter you choose.</LI>
+                <LI>IPv6 extension headers (hop-by-hop, routing, fragment, destination options, authentication) are understood.</LI>
+                <LI>Filters accept IPv6 addresses and CIDR blocks. Host names are resolved for IPv6 addresses too.</LI>
+            </UL>
+
+            <H3>Filters</H3>
+            <UL>
+                <LI><A Href="Filters Overview.Html#cidr">CIDR blocks</A> (<TT>10.0.0.0/8</TT>) and <A Href="Filters Overview.Html#ports">port ranges</A> (<TT>1024-65535</TT>).</LI>
+                <LI><A Href="Advanced Rules.Html">Advanced Rules</A>: combine conditions with AND - addresses, ports, protocol, TCP flags,
+                    host names and payload text - and match either direction.</LI>
+                <LI>A new option to require <B>every</B> filter group to match, instead of any.</LI>
+                <LI>Host name rules like <TT>host example.com</TT> now match the site's real addresses, not just reverse DNS.</LI>
+                <LI>Filters are remembered between sessions, can be saved to and loaded from files, and there are one-click presets.</LI>
+                <LI>Right-click filters for conversations, remote IP / port / host and protocol, plus "Remove Filters Matching This Packet".</LI>
+                <LI><B>Apply Filters To Grid</B> and <B>Clear All Filters</B> on the Filters menu.</LI>
+                <LI>The status bar shows how many filters are active and how many packets they have hidden.</LI>
+            </UL>
+
+            <H3>Data Grid</H3>
+            <UL>
+                <LI>New columns: <B>Direction</B>, <B>Flags</B>, <B>TTL</B>, <B>IP</B> version, <B>Frag</B> and <B>Matched By</B>.</LI>
+                <LI>DNS, HTTP and TLS packets show a readable summary in the Text column (for example the DNS name asked for,
+                    the HTTP request line and Host, or the TLS server name).</LI>
+                <LI>Host names are now looked up for every address seen, even for packets your filters hide. The program's own
+                    lookups are kept out of the grid, and identical lookups are no longer repeated.</LI>
+                <LI>New <B>Actions</B> menu options: <B>Auto-Scroll</B> and <B>DNS Lookups</B> can be switched on and off, and a new
+                    <B>Filters</B> option, <B>Hide This Program's Own DNS Lookups</B>.</LI>
+                <LI>Larger packets (up to 64 KB) are captured instead of being dropped, and memory use is capped.</LI>
+            </UL>
+
+            <H3>Packet Details</H3>
+            <UL>
+                <LI>A decoded pane: IPv4/IPv6, TCP (with options), UDP, ICMP/ICMPv6, DNS, HTTP and TLS handshakes.</LI>
+                <LI>A real hex dump with offsets and an ASCII gutter.</LI>
+                <LI><B>Prev / Next</B> buttons to step through packets without closing the dialog.</LI>
+            </UL>
+
+            <H3>Fixes</H3>
+            <UL>
+                <LI>Pausing is now reliable on a busy network: pausing no longer stalls, and dialogs no longer reopen unexpectedly.</LI>
+                <LI>Several threading problems that could cause crashes or hangs (host name cache, clearing the grid) were fixed.</LI>
+                <LI>Host names stop filling in once the grid was full - fixed.</LI>
+                <LI>Port filters now validate their input, and <B>Save Data</B> to a <TT>.csv</TT> file now really is comma separated
+                    and includes a Protocol heading.</LI>
+                <LI>Selecting the first row in the grid now works with all the right-click commands.</LI>
+            </UL>
+        </TD></TR></Table>
+    </BODY>
+</HTML>

@@ -3,48 +3,30 @@
        <TITLE>Requirements</TITLE>
     </HEAD>
     <BODY LINK="#0000FF" VLINK="#800080">
-        <Table Border="0" Width="570"><TR><TD>
+        <Table Border="0" Width="570" CellPadding="0" CellSpacing="0"><TR><TD>
 
             <CENTER><P><IMG SRC="AppLogo.gif"></P></CENTER>
-            
-            <H2 ALIGN=CENTER><FONT COLOR="#0000FF">Requirements</FONT></H1>
+
+            <H2 ALIGN=CENTER><FONT COLOR="#0000FF">Requirements</FONT></H2>
             <P><HR WIDTH="100%"></P>
-            
             <H3 ALIGN=CENTER><B>Minimum/Recommended Specs.</B></H3>
-            
-            <CENTER><TABLE BORDER=1 >
-            <TR>
-            <TD><B>Resource</B></TD>
-            
-            <TD><B>Minimum</B></TD>
-            
-            <TD><B>Recommended</B></TD>
-            </TR>
-            
-            <TR>
-            <TD><B><TT>Processor</TT></B></TD>
-            
-            <TD>66 MHz</TD>
-            
-            <TD>800+ MHz</TD>
-            </TR>
-            
-            <TR>
-            <TD><B><TT>RAM</TT></B></TD>
-            
-            <TD>2 MB</TD>
-            
-            <TD>16+ MB</TD>
-            </TR>
-            
-            <TR>
-            <TD><B><TT>Harddrive</TT></B></TD>
-            
-            <TD>2 MB</TD>
-            
-            <TD>24+ MB</TD>
-            </TR>
-            </TABLE></CENTER>
+<CENTER><TABLE BORDER=1 CELLPADDING=4 CELLSPACING=0 WIDTH="560">
+<TR><TD BGCOLOR="#E0E0FF"><B>Resource</B></TD><TD BGCOLOR="#E0E0FF"><B>Minimum</B></TD><TD BGCOLOR="#E0E0FF"><B>Recommended</B></TD></TR>
+<TR><TD VALIGN=TOP><B><TT>Operating system</TT></B></TD><TD VALIGN=TOP>Windows 10</TD><TD VALIGN=TOP>Windows 10 / 11</TD></TR>
+<TR><TD VALIGN=TOP><B><TT>Processor</TT></B></TD><TD VALIGN=TOP>1 GHz</TD><TD VALIGN=TOP>2 GHz+ (busy networks)</TD></TR>
+<TR><TD VALIGN=TOP><B><TT>RAM</TT></B></TD><TD VALIGN=TOP>256 MB free</TD><TD VALIGN=TOP>1 GB+ free</TD></TR>
+<TR><TD VALIGN=TOP><B><TT>Hard drive</TT></B></TD><TD VALIGN=TOP>10 MB</TD><TD VALIGN=TOP>10 MB (plus room for any data you save)</TD></TR>
+<TR><TD VALIGN=TOP><B><TT>Network</TT></B></TD><TD VALIGN=TOP>A network adapter that is up</TD><TD VALIGN=TOP>Wired adapter on a switch mirror port for network-wide visibility</TD></TR>
+</TABLE></CENTER>
+
+            <P><B>Administrator rights are required.</B> <I>IP Traffic Spy</I> reads packets through a raw socket,
+            and Windows only allows that for administrators. Run the program as an administrator (the installer sets this up).
+            If you do not, the status bar will report an error when connecting.</P>
+
+            <P>No driver or extra software is needed. A firewall or security product may prompt you the first time you run it.</P>
+
+            <P><B>Memory:</B> every packet in the grid keeps its full contents so it can be inspected later. The grid is limited to
+            100,000 rows <I>and</I> about 512 MB of packet data, whichever is reached first; the oldest rows are discarded.</P>
         </TD></TR></Table>
     </BODY>
 </HTML>

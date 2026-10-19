@@ -3,27 +3,37 @@
        <TITLE>Include Filters</TITLE>
     </HEAD>
     <BODY LINK="#0000FF" VLINK="#800080">
-        <Table Border="0" Width="570"><TR><TD>
-    
+        <Table Border="0" Width="570" CellPadding="0" CellSpacing="0"><TR><TD>
+
             <CENTER><P><IMG SRC="AppLogo.gif"></P></CENTER>
-            
+
             <H2 ALIGN=CENTER><FONT COLOR="#0000FF">Include Filters</FONT></H2>
             <P><HR WIDTH="100%"></P>
-            &nbsp;&nbsp;&nbsp;&nbsp;The Include Filters dialog allows you to setup filters that will be applied to
-            encountered TCP/IP packets to decide whether they should be <I>included</I> in the packets you want to see.
+            &nbsp;&nbsp;&nbsp;&nbsp;The Include Filters dialog allows you to set up filters that will be applied to
+            encountered IP packets to decide whether they should be <I>included</I> in the packets you want to see.
+            If you add no include filters, every packet is included.
             <BR><BR>
             <Img Src="Include Dialog.gif">
             <BR>
 
-            <BR><B>Source IP Addresses</B> allows you to enter source IPs to include.
-            <BR><B>Destination IP Addresses</B> allows you to enter destination IPs to include.
-            <BR><B>Source Ports</B> allows you to enter source ports to include.
-            <BR><B>Destination Ports</B> allows you to enter destination ports to include.
+            <P>Each box has an entry field, an <B>Add</B> button and a list with a <B>Delete</B> button. Press <B>Enter</B> in the entry field
+            to add, and press the <B>Delete</B> key on a list to remove the selected item. Anything invalid is refused with a message and
+            duplicates are ignored. <B>Changes only take effect when you press Ok</B>; Cancel throws them away.</P>
+
+            <BR><B>Source IP Addresses</B> source addresses to include. Addresses, wildcards and CIDR blocks, IPv4 or IPv6.
+            <BR><B>Destination IP Addresses</B> destination addresses to include.
+            <BR><B>Source Ports</B> source ports to include. A port, or a range like <TT>1024-65535</TT>.
+            <BR><B>Destination Ports</B> destination ports to include.
+            <BR><B>Advanced Rules</B> any number of rules which combine several conditions. Hover over this section in the dialog for a
+            full syntax reference, or see <A Href="Advanced Rules.Html">Advanced Rules</A>.
+            <BR><B>Require every filter group that has entries to match (AND)</B> changes how the groups combine, see below.
 
             <BR><BR><B>Notes:</B>
-            <BR>&nbsp;&nbsp;&nbsp;&nbsp;If the received TCP/IP packet matches any of the defined "Include" characteristics,
-            the packet will be written to <A Href="Main Dialog and Data Grid.Html">Data Grid Dialog</a> unless it also
-            matches one or more of the <A Href="Exclude Dialog.html">Exclude Filter</a> characteristics.
+            <BR>&nbsp;&nbsp;&nbsp;&nbsp;Within a list the entries are alternatives: a packet matching <I>any</I> entry of the list satisfies that list.
+            <BR>&nbsp;&nbsp;&nbsp;&nbsp;Normally a packet is included if it satisfies <I>any</I> of the lists. With the AND option ticked, it has to satisfy
+            <I>every</I> list that has entries.
+            <BR>&nbsp;&nbsp;&nbsp;&nbsp;If the packet matches an <A Href="Exclude Dialog.Html">Exclude Filter</A> it is hidden regardless.
+            See <A Href="Filters Overview.Html">Filters Overview</A> for the whole picture.
         </TD></TR></Table>
     </BODY>
 </HTML>

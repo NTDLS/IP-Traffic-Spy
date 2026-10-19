@@ -6,36 +6,93 @@
         <Table Border="0" Width="570" CellPadding="0" CellSpacing="0"><TR><TD>
 
             <CENTER><P><IMG SRC="AppLogo.gif"></P></CENTER>
-    
-            <H2 ALIGN=CENTER><FONT COLOR="#0000FF">Main Dialog & Data Grid</FONT></H2>
-            <P><HR WIDTH="100%"></P>
 
-            &nbsp;&nbsp;&nbsp;&nbsp;The "Main Dialog" or "Data Grid Dialog" is where TCP/IP packets will be displayed that were
+            <H2 ALIGN=CENTER><FONT COLOR="#0000FF">Main Dialog &amp; Data Grid</FONT></H2>
+            <P><HR WIDTH="100%"></P>
+            &nbsp;&nbsp;&nbsp;&nbsp;The "Main Dialog" or "Data Grid Dialog" is where IP packets are displayed that were
             encountered but not filtered out by one or more of your <a href="Include Dialog.Html">Inclusion</a> or
-            <a href="Exclude Dialog.Html">Exclusion</A> filters.
+            <a href="Exclude Dialog.Html">Exclusion</A> filters (see <A Href="Filters Overview.Html">Filters</A>).
             <BR><BR>
             <Img Src="Main Dialog.png">
 
-            <BR><BR><B>The data grid displays various columns:</B>
-            <BR>&nbsp;&nbsp;&nbsp;&nbsp;<B>Date</B> is the date that the packet was encountered.
-            <BR>&nbsp;&nbsp;&nbsp;&nbsp;<B>Time</B> is the time that the packet was encountered.
-            <BR>&nbsp;&nbsp;&nbsp;&nbsp;<B>S-IP</B> is the originating IP of the TCP/IP packet.
-            <BR>&nbsp;&nbsp;&nbsp;&nbsp;<B>D-IP</B> is the intended destination IP of the TCP/IP packet.
-            <BR>&nbsp;&nbsp;&nbsp;&nbsp;<B>S-Port</B> is the port that the TCP/IP packed originated from.
-            <BR>&nbsp;&nbsp;&nbsp;&nbsp;<B>D-Port</B> is the intended destination port.
-            <BR>&nbsp;&nbsp;&nbsp;&nbsp;<B>Text</B> This is the actual text data that was appended to the TCP/IP packet.
-            <BR>&nbsp;&nbsp;&nbsp;&nbsp;<B>Size</B> This is the overall size of the TCP/IP packet.
+            <H3>Columns</H3>
+<CENTER><TABLE BORDER=1 CELLPADDING=4 CELLSPACING=0 WIDTH="560">
+<TR><TD BGCOLOR="#E0E0FF"><B>Column</B></TD><TD BGCOLOR="#E0E0FF"><B>Meaning</B></TD></TR>
+<TR><TD VALIGN=TOP><B>Date</B>, <B>Time</B></TD><TD VALIGN=TOP>When the packet was encountered.</TD></TR>
+<TR><TD VALIGN=TOP><B>Protocol</B></TD><TD VALIGN=TOP>TCP, UDP, ICMP, ICMPv6, IGMP, or the name of another IP protocol (otherwise "Other").</TD></TR>
+<TR><TD VALIGN=TOP><B>S-IP</B>, <B>D-IP</B></TD><TD VALIGN=TOP>The originating (source) and intended destination IP addresses. IPv4 or IPv6.</TD></TR>
+<TR><TD VALIGN=TOP><B>S-Host</B>, <B>D-Host</B></TD><TD VALIGN=TOP>The host name of each address, found by reverse DNS. Shows <TT>...</TT> while the lookup is pending, and stays blank if the address has no name. Every address is looked up once and remembered for the session.</TD></TR>
+<TR><TD VALIGN=TOP><B>S-Port</B>, <B>D-Port</B></TD><TD VALIGN=TOP>The ports for TCP and UDP. Shown as 0 for packets with no ports (ICMP, other protocols, and fragments after the first).</TD></TR>
+<TR><TD VALIGN=TOP><B>Text</B></TD><TD VALIGN=TOP>The printable text of the packet data. For <B>DNS</B>, <B>HTTP</B> and <B>TLS</B> this is replaced by a readable summary, e.g. <TT>DNS query A example.com</TT>, <TT>HTTP GET /index.html HTTP/1.1 | Host: example.com</TT> or <TT>TLS ClientHello SNI: example.com</TT>.</TD></TR>
+<TR><TD VALIGN=TOP><B>Size</B></TD><TD VALIGN=TOP>The overall size of the IP packet in bytes, headers included.</TD></TR>
+<TR><TD VALIGN=TOP><B>Direction</B></TD><TD VALIGN=TOP><TT>Outbound</TT> (sent from this computer), <TT>Inbound</TT> (sent to it) or <TT>Other</TT> (see Foreign packets below).</TD></TR>
+<TR><TD VALIGN=TOP><B>Flags</B></TD><TD VALIGN=TOP>The TCP flags that were set: <TT>SYN ACK FIN RST PSH URG ECE CWR</TT>. Empty for non-TCP packets.</TD></TR>
+<TR><TD VALIGN=TOP><B>TTL</B></TD><TD VALIGN=TOP>The IPv4 time-to-live or IPv6 hop limit. Blank when unknown.</TD></TR>
+<TR><TD VALIGN=TOP><B>IP</B></TD><TD VALIGN=TOP>4 or 6: the IP version of the packet.</TD></TR>
+<TR><TD VALIGN=TOP><B>Frag</B></TD><TD VALIGN=TOP><TT>Yes</TT> if the packet is part of a fragmented datagram.</TD></TR>
+<TR><TD VALIGN=TOP><B>Matched By</B></TD><TD VALIGN=TOP>Which <A Href="Include Dialog.Html">include</A> filter entries let this packet through. Blank when there are no include filters.</TD></TR>
+</TABLE></CENTER>
 
-            <BR><BR><B>The data grid also displays various icons for each specific data direction:</B>
-            <BR>&nbsp;&nbsp;&nbsp;&nbsp;<Img Src="Sent Packet.GIF"> <B>Sent Packets</B> are packets that were sent from your computer.
+            <P>You can resize and drag the column headers to rearrange them.</P>
+
+            <H3>Direction icons</H3>
+            &nbsp;&nbsp;&nbsp;&nbsp;<Img Src="Sent Packet.GIF"> <B>Sent Packets</B> are packets that were sent from your computer.
             <BR>&nbsp;&nbsp;&nbsp;&nbsp;<Img Src="Received Packet.GIF"> <B>Received Packets</B> are packets that were received by your computer.
             <BR>&nbsp;&nbsp;&nbsp;&nbsp;<Img Src="Foreign Packet.GIF"> <B>Foreign Packets</B> are packets that were encountered by your network
-                    interface that are not destined for your computer. These are usually packets that are broadcast from various
-                    broadcast protocols and data transmitted by older hubs (as opposed to switches).
+                    interface that are not to or from your computer. These are usually packets that are broadcast or multicast
+                    by various protocols, and data transmitted by older hubs (as opposed to switches).
+            <P>"Your computer" means any address of the adapter you connected to, including all of its IPv6 addresses.</P>
 
-            <BR><BR><B>Notes:</B>
-            <BR>&nbsp;&nbsp;&nbsp;&nbsp;The grid will only hold 100,000 lines of packet information. The oldest packets
-            will be truncated from the grid as packets are received that overflows this limit.
+            <H3>Status bar</H3>
+            <P>From left to right:</P>
+            <UL>
+                <LI>The connection: <TT>Connected to ... (IPv4 + IPv6)</TT>, <TT>(Not Connected)</TT>, or the reason capture could not start.</LI>
+                <LI><TT>Packets</TT>: everything the program has seen since connecting, and its total size.</LI>
+                <LI><TT>Matchs</TT>: how many of those were shown in the grid.</LI>
+                <LI><TT>DNS Cache / Backlog</TT>: how many addresses have been looked up, and how many lookups are still waiting.</LI>
+                <LI>The filter summary, for example <TT>Filters: 2 include, 5 exclude | Hidden: 1,204</TT>. <I>Hidden</I> counts packets your
+                    include/exclude filters removed. It also briefly shows confirmations such as "Added 1 exclude filter".</LI>
+            </UL>
+
+            <H3>Menus</H3>
+<CENTER><TABLE BORDER=1 CELLPADDING=4 CELLSPACING=0 WIDTH="560">
+<TR><TD BGCOLOR="#E0E0FF"><B>Menu</B></TD><TD BGCOLOR="#E0E0FF"><B>Item</B></TD><TD BGCOLOR="#E0E0FF"><B>What it does</B></TD></TR>
+<TR><TD VALIGN=TOP>File</TD><TD VALIGN=TOP>Save Data</TD><TD VALIGN=TOP>Writes the grid to a file. Choose <TT>.txt</TT> or <TT>.tsv</TT> for tab separated, or <TT>.csv</TT> for comma separated. The Text column is quoted. Columns: Date, Time, Protocol, Source IP, Destination IP, Source Port, Destination Port, Text, Size, Direction, Flags, TTL, IP Version, Fragment, Matched By.</TD></TR>
+<TR><TD VALIGN=TOP>File</TD><TD VALIGN=TOP>Change Connection</TD><TD VALIGN=TOP>Stops capturing and lets you choose another adapter or address.</TD></TR>
+<TR><TD VALIGN=TOP>File</TD><TD VALIGN=TOP>Exit</TD><TD VALIGN=TOP>Closes the program. Your filters are saved.</TD></TR>
+<TR><TD VALIGN=TOP>Actions</TD><TD VALIGN=TOP>Clear Grid (Delete Key)</TD><TD VALIGN=TOP>Removes every row from the grid.</TD></TR>
+<TR><TD VALIGN=TOP>Actions</TD><TD VALIGN=TOP>Pause (Space Bar)</TD><TD VALIGN=TOP>Pauses or resumes capture. The title bar shows "(Paused)".</TD></TR>
+<TR><TD VALIGN=TOP>Actions</TD><TD VALIGN=TOP>Auto-Scroll</TD><TD VALIGN=TOP>Ticked (the default): the grid scrolls to keep the newest packet in view. Untick it to stay where you are while packets keep arriving, handy for reading something in the middle of a busy capture without having to pause.</TD></TR>
+<TR><TD VALIGN=TOP>Actions</TD><TD VALIGN=TOP>DNS Lookups</TD><TD VALIGN=TOP>Ticked (the default): host names are looked up for the addresses seen. Untick it to stop <I>all</I> DNS lookups, both the reverse lookups that fill the host columns and the lookups for host names in <A Href="Advanced Rules.Html#hosts">rules</A>. Names already learned are kept and still used; the host columns of new packets are simply blank. See <A Href="Privacy and Responsible Use.Html">Privacy</A>.</TD></TR>
+<TR><TD VALIGN=TOP>Filters</TD><TD VALIGN=TOP>Includes / Excludes</TD><TD VALIGN=TOP>Opens the <A Href="Include Dialog.Html">Include</A> / <A Href="Exclude Dialog.Html">Exclude</A> dialog.</TD></TR>
+<TR><TD VALIGN=TOP>Filters</TD><TD VALIGN=TOP>Apply Filters To Grid</TD><TD VALIGN=TOP>Deletes the rows already in the grid which would not be shown under the current filters. Asks first.</TD></TR>
+<TR><TD VALIGN=TOP>Filters</TD><TD VALIGN=TOP>Clear All Filters</TD><TD VALIGN=TOP>Removes every include and exclude filter.</TD></TR>
+<TR><TD VALIGN=TOP>Filters</TD><TD VALIGN=TOP>Save Filters... / Load Filters...</TD><TD VALIGN=TOP>Saves the filters to, or loads them from, a <TT>.ipsf</TT> file. Loading replaces the current filters.</TD></TR>
+<TR><TD VALIGN=TOP>Filters</TD><TD VALIGN=TOP>Preset: ...</TD><TD VALIGN=TOP>Adds a ready-made set of filters. See <A Href="Filters Overview.Html#presets">Presets</A>.</TD></TR>
+<TR><TD VALIGN=TOP>Filters</TD><TD VALIGN=TOP>TCP, UDP, Other Protocols</TD><TD VALIGN=TOP>Tick to show, untick to hide that kind of packet.</TD></TR>
+<TR><TD VALIGN=TOP>Filters</TD><TD VALIGN=TOP>Broadcast, Inbound, Outbound Packets</TD><TD VALIGN=TOP>Tick to show, untick to hide packets going that direction.</TD></TR>
+<TR><TD VALIGN=TOP>Filters</TD><TD VALIGN=TOP>Hide This Program's Own DNS Lookups</TD><TD VALIGN=TOP>Ticked (the default): the DNS packets that <I>IP Traffic Spy</I> itself sends to look up host names (and the answers) are left out of the grid. Without this, every new address would make DNS packets, which are shown, which involve more addresses. Only lookups the program is making for itself are hidden; your own DNS traffic still shows. They count towards "Hidden" in the status bar.</TD></TR>
+<TR><TD VALIGN=TOP>Help</TD><TD VALIGN=TOP>Contents</TD><TD VALIGN=TOP>Opens this help file (F1).</TD></TR>
+</TABLE></CENTER>
+
+            <H3>Right-click menu</H3>
+            <P>Right-click the grid. With one or more rows selected you get:</P>
+            <UL>
+                <LI><B>Clipboard</B>: Copy Text, Copy Source / Destination IP, Host or Port. Values are de-duplicated and sorted when several rows are selected.</LI>
+                <LI><B>Filters</B>: <B>Exclude</B> and <B>Include</B> sub-menus, and <B>Remove Filters Matching This Packet</B>.
+                    See <A Href="Filters Overview.Html#rightclick">Right-click filters</A>.</LI>
+                <LI><B>Details</B> (single row): opens <A Href="Packet Details.Html">Packet Details</A>.</LI>
+                <LI><B>Select All</B> and <B>Clear</B>.</LI>
+            </UL>
+
+            <H3>Notes</H3>
+            <UL>
+                <LI>The grid holds up to 100,000 rows and about 512 MB of packet data. When either limit is reached the oldest rows
+                    are discarded to make room for new ones.</LI>
+                <LI>While <B>paused</B>, or while a dialog such as Packet Details or the filter dialogs is open, capture is suspended and
+                    packets arriving in the meantime are <B>not</B> recorded. Windows only buffers a small amount.</LI>
+                <LI>Double-clicking a row opens <A Href="Packet Details.Html">Packet Details</A>.</LI>
+            </UL>
         </TD></TR></Table>
     </BODY>
 </HTML>

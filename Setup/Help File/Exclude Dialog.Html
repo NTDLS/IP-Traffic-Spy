@@ -3,27 +3,36 @@
        <TITLE>Exclude Filters</TITLE>
     </HEAD>
     <BODY LINK="#0000FF" VLINK="#800080">
-        <Table Border="0" Width="570"><TR><TD>
-    
+        <Table Border="0" Width="570" CellPadding="0" CellSpacing="0"><TR><TD>
+
             <CENTER><P><IMG SRC="AppLogo.gif"></P></CENTER>
 
             <H2 ALIGN=CENTER><FONT COLOR="#0000FF">Exclude Filters</FONT></H2>
             <P><HR WIDTH="100%"></P>
-            &nbsp;&nbsp;&nbsp;&nbsp;The Exclude Filters dialog allows you to setup filters that will be applied to
-            encountered TCP/IP packets to decide whether they should be <I>excluded</I> in the packets you want to see.
+            &nbsp;&nbsp;&nbsp;&nbsp;The Exclude Filters dialog allows you to set up filters that will be applied to
+            encountered IP packets to decide whether they should be <I>excluded</I> from the packets you want to see.
             <BR><BR>
             <Img Src="Exclude Dialog.gif">
             <BR>
 
-            <BR><B>Source IP Addresses</B> allows you to enter source IPs to exclude.
-            <BR><B>Destination IP Addresses</B> allows you to enter destination IPs to exclude.
-            <BR><B>Source Ports</B> allows you to enter source ports to exclude.
-            <BR><B>Destination Ports</B> allows you to enter destination ports to exclude.
+            <P>Each box has an entry field, an <B>Add</B> button and a list with a <B>Delete</B> button. Press <B>Enter</B> in the entry field
+            to add, and press the <B>Delete</B> key on a list to remove the selected item. Anything invalid is refused with a message and
+            duplicates are ignored. <B>Changes only take effect when you press Ok</B>; Cancel throws them away.</P>
+
+            <BR><B>Source IP Addresses</B> source addresses to exclude. Addresses, wildcards and CIDR blocks, IPv4 or IPv6.
+            <BR><B>Destination IP Addresses</B> destination addresses to exclude.
+            <BR><B>Source Ports</B> source ports to exclude. A port, or a range like <TT>1024-65535</TT>.
+            <BR><B>Destination Ports</B> destination ports to exclude.
+            <BR><B>Advanced Rules</B> rules which combine several conditions. Hover over this section in the dialog for a full syntax
+            reference, or see <A Href="Advanced Rules.Html">Advanced Rules</A>.
 
             <BR><BR><B>Notes:</B>
-            <BR>&nbsp;&nbsp;&nbsp;&nbsp;If the received TCP/IP packet matches any of the defined "Exclude" characteristics,
-            the packet will <B>not</B> be written to <A Href="Main Dialog and Data Grid.Html">Data Grid Dialog</a> even it also
-            matches one or more of the <A Href="Include Dialog.html">Include Filter</a> characteristics.
+            <BR>&nbsp;&nbsp;&nbsp;&nbsp;If the received packet matches <I>any</I> of the defined "Exclude" entries, the packet will <B>not</B> be written to the
+            <A Href="Main Dialog and Data Grid.Html">Data Grid Dialog</a> even if it also matches one or more of the
+            <A Href="Include Dialog.Html">Include Filter</a> entries.
+            <BR>&nbsp;&nbsp;&nbsp;&nbsp;Exclude entries are always "any": there is no AND option here, but a single advanced rule can require several
+            things at once, for example <TT>proto udp and port 53</TT>.
+            <BR>&nbsp;&nbsp;&nbsp;&nbsp;For a quick start, <B>Filters &gt; Preset: Hide Network Noise</B> fills in the common background chatter.
         </TD></TR></Table>
     </BODY>
 </HTML>

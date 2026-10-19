@@ -75,6 +75,16 @@
 #define IDC_VIEWMODERAW                 1034
 #define IDC_OMITTCPHEADER2              1035
 #define IDC_WRAPTEXT                    1035
+#define IDC_EDIT_RULE                   1036
+#define IDC_BUTTON_RULE                 1037
+#define IDC_LIST_RULE                   1038
+#define IDC_BUTTON_RULE_DEL             1039
+#define IDC_CHECK_MATCHALL              1040
+#define IDC_VIEWDECODE                  1041
+#define IDC_VIEWPREV                    1042
+#define IDC_VIEWNEXT                    1043
+#define IDC_SHOWDECODE                  1044
+#define IDC_VIEWPOS                     1045
 #define ID_FILE_SAVEDATA                40001
 #define ID_HELP_CONTENTS                40002
 #define ID_HELP_ABOUT                   40003
@@ -97,14 +107,23 @@
 #define ID_FILTERS_INBOUNDPACKETS       40022
 #define ID_FILTERS_OUTBOUNDPACKETS      40023
 #define ID_FILTERS_OTHERPROTOCOLS       40024
+#define ID_FILTERS_CLEARALL             40025
+#define ID_FILTERS_APPLYGRID            40026
+#define ID_FILTERS_SAVE                 40027
+#define ID_FILTERS_LOAD                 40028
+#define ID_FILTERS_PRESET_NOISE         40029
+#define ID_FILTERS_PRESET_WEB           40030
+#define ID_FILTERS_HIDEOWNDNS           40031
+#define ID_OPTIONS_AUTOSCROLL           40032
+#define ID_OPTIONS_DNSLOOKUPS           40033
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        110
-#define _APS_NEXT_COMMAND_VALUE         40025
-#define _APS_NEXT_CONTROL_VALUE         1034
+#define _APS_NEXT_COMMAND_VALUE         40034
+#define _APS_NEXT_CONTROL_VALUE         1046
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
