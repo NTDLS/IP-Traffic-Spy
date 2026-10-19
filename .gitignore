@@ -12,3 +12,7 @@
 *.res
 *.user
 *.aps
+
+.vs/
+
+Debug/
